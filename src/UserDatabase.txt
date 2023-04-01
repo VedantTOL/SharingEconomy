@@ -1,0 +1,5 @@
+0, ve@ag, 1234, ve, 17
+1, k@ag, 4321, ave, 22
+2, m@af, 1231, aroar, 123
+3, aro@gao.com, 121111, aorar, 123
+4, asfik@gdii, 123123, diggijf, 23
