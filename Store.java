@@ -59,6 +59,8 @@ public class Store {
         } else {
             System.out.println("Thank you for your interest in our product(car)!");
         }
+        // I might need to add an exception where if the user tries to buy a product that doesn't exist in the store,
+        // an error message is thrown
     }
 
     // this method could be used to determine if a certain product in the store object is in/out of stock
