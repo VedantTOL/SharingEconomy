@@ -4,7 +4,6 @@ public class Store {
     private String storeName;
     private String storeOwner;
     private ArrayList<Product> products;
-    private int numProducts = 0;
 
     public Store(String storeName, String storeOwner, ArrayList<Product> products) {
         this.storeName = storeName;
