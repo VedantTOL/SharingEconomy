@@ -37,7 +37,7 @@ public class Store {
 
     // the customer wil enter an input that we can convert to a boolean, stating that they want to buy a specific product
     // this method can be used in conjunction with the shopping cart selection potentially
-    public void buyProduct(boolean buyProduct, Product product) {
+    public void sellProduct(boolean buyProduct, Product product) {
         if (buyProduct) {
             for (int i = 0; i < products.size(); i++) {
                 if (products.get(i).equals(product)) {
