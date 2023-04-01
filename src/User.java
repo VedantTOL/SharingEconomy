@@ -1,4 +1,3 @@
-import java.lang.reflect.Array;
 import java.util.Scanner;
 import java.io.*;
 import java.util.ArrayList;
@@ -181,8 +180,7 @@ public class User {
         try {
             bw = new BufferedWriter(new FileWriter(new File("./src/UserDatabase.txt")));
             for (User k: database) {
-                System.out.println(k.getEmail());
-                bw.write(toString(k));
+                bw.write(k.constructorString());
                 bw.write("\n");
             }
             bw.close();
@@ -202,8 +200,12 @@ public class User {
         }
     }
 
-    public String toString(User user) {
-        return String.format("%d, %s, %s, %s, %d", user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(), user.getAge());
+    public String constructorString() {
+        return String.format("%d, %s, %s, %s, %d", this.getUniqueIdentifier(), this.getEmail(), this.getPassword(), this.getName(), this.getAge());
+    }
+
+    public String toString() {
+        return String.format("ID = <%d>\nEmail = <%s>\nPassword = <****>\nName = <%s>\nAge <%d>", this.getUniqueIdentifier(), this.getEmail(), this.getPassword(), this.getName(), this.getAge());
     }
     public User login(Scanner scanner) {
         ArrayList<User> database = readUserDatabase("./src/UserDatabase.txt");
@@ -226,4 +228,96 @@ public class User {
         System.out.println("Invalid email!");
         return null;
     }
+
+    public User changeAccount(Scanner scanner) {
+        System.out.println("Here are your details: ");
+        System.out.println(this.toString());
+        while (true) {
+            System.out.println("What would you like to change?");
+            System.out.println("1. Email\n 2. Password\n 3.Name\n 4.Age");
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+            switch (choice) {
+                case 1 -> {
+                    while (true) {
+                        System.out.println("Enter new email: ");
+                        String email = scanner.nextLine();
+                        if (checkEmailFormat(email)) {
+                            setEmail(email);
+                            break;
+                        } else {
+                            System.out.println("Please enter a valid email!");
+                        }
+                    }
+                }
+                case 2 -> {
+                    while (true) {
+                        System.out.println("Please enter your old password: ");
+                        String checkPassword = scanner.nextLine();
+                        if (checkPassword.equals(this.getPassword())) {
+                            System.out.println("Please enter your new password: ");
+                            setPassword(scanner.nextLine());
+                            break;
+                        } else {
+                            System.out.println("Incorrect password, please try again.");
+                        }
+                    }
+                }
+                case 3 -> {
+                    System.out.println("Please enter a new name");
+                    setName(scanner.nextLine());
+                }
+                case 4 -> {
+                    int age;
+                    System.out.println("Please enter a new age");
+                    while (true) {
+                        age = scanner.nextInt();
+                        if (age > 0) {
+                            setAge(age);
+                            break;
+                        } else {
+                            System.out.println("Please enter a valid age!");
+                        }
+                    }
+                }
+                default -> {
+                    System.out.println("Please select a valid menu option!");
+                    continue;
+                }
+            }
+                break;
+            }
+        return this;
+    }
+
+    public boolean deleteAccount(Scanner scanner) {
+        System.out.println("Would you like to delete your account? This cannot be undone.");
+        System.out.println("1.Yes\n2.No");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+        while (true) {
+            if (choice == 1) {
+                ArrayList<User> database = readUserDatabase("./src/UserDatabase.txt");
+                database.remove(this.uniqueIdentifier - 1);
+                try {
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(new File("./src/UserDatabase.txt")));
+                    for (User k : database) {
+                        bw.write(k.constructorString());
+                        bw.write("\n");
+                    }
+                    bw.close();
+                    return true;
+                } catch (IOException e) {
+                    System.out.println("An error occured please try again!");
+                    return false;
+                }
+            } else if (choice == 2) {
+                return false;
+            } else {
+                System.out.println("Please select a valid menu option!");
+            }
+        }
+    }
+
+
 }

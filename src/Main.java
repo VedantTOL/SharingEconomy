@@ -22,5 +22,6 @@ public class Main {
                 break;
             }
         }
+        user.changeAccount(scanner);
     }
 }
