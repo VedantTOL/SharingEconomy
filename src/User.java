@@ -308,7 +308,7 @@ public class User {
                     bw.close();
                     return true;
                 } catch (IOException e) {
-                    System.out.println("An error occured please try again!");
+                    System.out.println("An error occurred please try again!");
                     return false;
                 }
             } else if (choice == 2) {
