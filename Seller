@@ -1,0 +1,75 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+public class Seller extends User {
+    private ArrayList<Store> stores;
+
+    public Seller(int uniqueIdentifier, String email, String password, String name, int age) {
+        super(uniqueIdentifier, email, password, name, age);
+        this.stores = new ArrayList<>();
+    }
+    public void addStore(Store store) {
+        stores.add(store);
+    }
+
+
+    //this will make a file for each seller listing the shops and products within the shop for each seller.
+    public void writeDataToFiles() {
+        // Loop through each seller
+        for (Seller seller : sellers) {
+            // Create a file for the seller
+            String filename = seller.getName() + ".txt";
+            try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) {
+                // Write the names of the seller's shops to the file
+                for (Store store : seller.getShops()) {
+                    writer.println(store.getName());
+                    // Write the names of the products in the shop to the file
+                    for (Product product : store.getProducts()) {
+                        writer.println("\t" + product.getName());
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println("Error writing data to file: " + e.getMessage());
+            }
+        }
+    }
+
+
+
+
+    // this will list the products within each store.
+    public void writeProductNamesToFile(String storeName, String filename) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
+            for (Store store : stores) {
+                if (store.getStoreName().equals(storeName)) {
+                    List<Product> products = store.getProducts();
+                    for (Product product : products) {
+                        writer.write(product.getName() + "\n");
+                    }
+                    writer.close();
+                    System.out.println("Product names written to file successfully.");
+                    return;
+                }
+            }
+            System.out.println("Store not found.");
+        } catch (IOException e) {
+            System.out.println("Error writing product names to file: " + e.getMessage());
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
