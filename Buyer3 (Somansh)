@@ -1,0 +1,103 @@
+
+import java.util.List;
+import java.io.IOException;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
+
+
+public class Buyer {
+    private String name;
+    private double balance;
+    private String item;
+    private double price;
+
+    public Buyer(String name, double balance) {
+        this.name = name;
+        this.balance = balance;
+        this.item = item;
+        this.price = price;
+    }
+
+    public void purchaseProduct(String productName, int quantity) {
+        for (Seller seller : sellers) {
+            List<String> lines = null;
+            File sellerFile = new File(seller.getName() + ".txt");
+            try {
+                lines = Files.readAllLines(sellerFile.toPath(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                System.out.println("Error reading seller file: " + e.getMessage());
+                continue;
+            }
+            for (String line : lines) {
+                String[] parts = line.split(",");
+                if (parts[1].equals(productName) && Integer.parseInt(parts[2]) >= quantity) {
+                    int remainingQuantity = Integer.parseInt(parts[2]) - quantity;
+                    System.out.println("Purchase successful.");
+                    System.out.println("Remaining quantity: " + remainingQuantity);
+                    return;
+                }
+            }
+        }
+        System.out.println("Product not found or quantity not available.");
+    }
+
+    public void updateSellerList(Seller seller, String shopName, String productName) {
+        try {
+            // Find the file for the seller
+            File sellerFile = new File(seller.getName() + ".txt");
+
+            // Read all lines from the file
+            List<String> lines = Files.readAllLines(sellerFile.toPath(), StandardCharsets.UTF_8);
+
+            // Find the line with the product name and remove it
+            lines.removeIf(line -> line.startsWith(productName));
+
+            // Rewrite the updated lines to the file
+            Files.write(sellerFile.toPath(), lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            // Handle any potential errors
+            System.out.println("Error updating inventory: " + e.getMessage());
+        }
+    }
+
+
+
+
+
+
+
+    public String getName() {
+        return name;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(double balance) {
+        this.balance = balance;
+    }
+
+    public String getItem() {
+        return item;
+    }
+
+
+
+
+
+
+}
+
+    /*/ This code would implement the Product class
+    public void buyItem(Item item) {
+        if (balance >= item.getPrice()) {
+            balance -= item.getPrice();
+            System.out.println(name + " bought " + item.getName() + " for $" + item.getPrice());
+        } else {
+            System.out.println(name + " cannot afford " + item.getName());
+        }
+    }
+}
+     */
