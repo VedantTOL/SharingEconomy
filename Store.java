@@ -35,11 +35,6 @@ public class Store {
         this.products = products;
     }
 
-    // this method will calculate the sales made, so this method will only be called after product(s) have been sold
-    public double calculateSales() {
-        return 0;
-    }
-
     // to String method just to see what the store looks like
     public String toString() {
         return storeName + storeOwner + products;
