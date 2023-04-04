@@ -4,14 +4,12 @@ public class Main {
     public static void main(String[] args) {
         User loginAccess = new User();
         User user;
-        Seller seller = new Seller();
+        //Seller seller;
 
         Scanner scanner = new Scanner(System.in);
-
+        System.out.println("Buyer or Seller");
+        int choice = scanner.nextInt();
         while (true) {
-            System.out.println("Buyer or Seller");
-            int choice = scanner.nextInt();
-
             System.out.println("Create new account or login?");
             int option = scanner.nextInt();
             scanner.nextLine();
@@ -19,10 +17,6 @@ public class Main {
             if (option == 1) {
                 //create new account
                 user = loginAccess.addUser(scanner);
-                if (choice == 1) {
-                    Seller buyer = new Seller(user);
-                    System.out.println(buyer.getName());
-                }
                 break;
             } else if (option == 2) {
                 do {
@@ -30,9 +24,14 @@ public class Main {
                 } while (user == null);
                 break;
             }
-
-
         }
+
+        if (choice == 1) {
+            Seller seller = new Seller(user.getUniqueIdentifier());
+            System.out.println(user.getName());
+            System.out.println(seller.getName());
+        }
+
         //user.changeAccount(scanner);
 
     //ArrayList<Seller> database = seller.readSellerDatabase();

@@ -27,10 +27,10 @@ public class User {
     public User(int uniqueIdentifier) {
         this.uniqueIdentifier = uniqueIdentifier;
         ArrayList<User> database = readUserDatabase("./src/UserDatabase.txt");
-        this.email = database.get(uniqueIdentifier - 1).getEmail();
-        this.password = database.get(uniqueIdentifier - 1).getPassword();
-        this.name = database.get(uniqueIdentifier - 1).getName();
-        this.age = database.get(uniqueIdentifier - 1).getAge();
+        this.email = database.get(uniqueIdentifier).getEmail();
+        this.password = database.get(uniqueIdentifier).getPassword();
+        this.name = database.get(uniqueIdentifier).getName();
+        this.age = database.get(uniqueIdentifier).getAge();
     }
 
     public User(String[] userDetails) throws UserDatabaseFormatError {

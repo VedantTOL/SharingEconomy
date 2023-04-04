@@ -9,7 +9,7 @@ public class Seller extends User {
         super(uniqueIdentifier, email, password, name, age);
         this.stores = stores;
     }
-    public Seller (User user) {
+    public Seller (User gray) {
         super();
     }
 
