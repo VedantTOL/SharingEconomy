@@ -173,3 +173,6 @@ public class Main {
                     }
                 } while (continueShopping == 1);
             }
+        }
+    }
+}
