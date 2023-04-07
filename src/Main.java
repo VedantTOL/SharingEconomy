@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
@@ -89,20 +90,17 @@ public class Main {
                                 if (choice == 1) {
 
                                     Store store = buyer.viewStore(product);
-                                    System.out.println("How many of the product would you like to purchase?");
+                                    System.out.printf("How many of %s would you like to purchase?", product.getName());
 
                                     int numProductsForPurchase = scanner.nextInt();
                                     scanner.nextLine();
 
                                     buyer.buyProduct(product, numProductsForPurchase, store, scanner);
-                                    // will also need to write to the seller file to update product quantity
-                                    // and write to the purchases file for customers
 
 
                                 } else if (choice == 2) {
                                     Store store = buyer.viewStore(product);
                                     buyer.addToShoppingCart(product, store);
-                                    // use the add to shopping cart method here and write the shopping cart to the file
 
 
                                 } else if (choice == 3) {
@@ -121,7 +119,7 @@ public class Main {
                                 System.out.println("Taking you back to the marketplace menu...");
 
                             } else if (continueShopping == 2) {
-                                // will need a method to view the cart
+                                // call viewCart method here
 
                                 System.out.println("Would you like to remove anything from your cart, purchase your cart," +
                                         " or continue shopping?\n1. Remove item from cart.\n2. Purchase cart.\n3. Continue.");
@@ -130,20 +128,23 @@ public class Main {
                                 scanner.nextLine();
 
                                 if (purchaseCart == 1) {
-                                    // need to be able to select a product from the cart then do this method:
+                                    System.out.println("Which product would you like to remove from your cart? Please" +
+                                            "type the name of the product.");
+                                    // iterate through arrayList that was made from viewCart method and select the product
+                                    // that matches the name of the product the user typed
                                     // buyer.removeFromShoppingCart(product);
-                                    // then write to shopping cart file
 
                                 } else if (purchaseCart == 2) {
-                                    // need method to purchase whole cart, then write to shopping cart file
-
+                                    ArrayList<Product> shoppingCart = buyer.getShoppingCart();
+                                    // need method to purchase whole cart
                                 }
 
                             } else if (continueShopping == 3) {
-                                // will need a method to view purchases so need to read purchases file
+                                // need a method to view purchases
 
                             } else if (continueShopping == 4) {
                                 System.out.println("Thank you for shopping with us!");
+                                // write to purchases and shopping cart file
                                 leave = true;
 
                             }
@@ -157,6 +158,7 @@ public class Main {
                                     continueShopping = 1;
 
                                 } else if (logOut == 2) {
+                                    // write to purchases and shopping cart file
                                     leave = true;
                                 }
                             }
@@ -171,6 +173,3 @@ public class Main {
                     }
                 } while (continueShopping == 1);
             }
-        }
-    }
-}
