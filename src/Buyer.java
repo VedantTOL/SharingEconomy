@@ -335,7 +335,7 @@ public class Buyer extends User {
 
         } else if (product.getQuantityForPurchase() < numProductsForPurchase) {
             System.out.printf("There are only %d %ss left in this store\n", product.getQuantityForPurchase(), product.getName());
-            System.out.println("Would you like to purchase the remaining number");
+            System.out.println("Would you like to purchase the remaining number?");
 
             String yesOrNo = scanner.nextLine();
             if (yesOrNo.equalsIgnoreCase("Yes")) {
@@ -354,11 +354,27 @@ public class Buyer extends User {
     }
 
     public void purchaseCart() {
-        // reads the shopping file into an object (maybe an arraylist or something) and purchases every product
+        // reads the shopping cart file into an the arrayList and purchases every product
+        ArrayList<Product> shoppingCart = new ArrayList<>(); // read file into this
+        for (int i = 0; i < shoppingCart.size(); i++) {
+
+        }
+    }
+
+    public void writeShoppingCart(ArrayList<Product> shoppingCart) {
+
+    }
+
+    public void writePurchases(ArrayList<Product> purchases) {
+
     }
 
     public ArrayList<Product> viewCart() {
         // reads the shopping cart file and returns an arraylist of products that the specific customer has in their cart
+        // I'll print out the arraylist in the main so that the user can see every product
+        // 1.
+        // 2.
+        // 3.
     }
 
     public String viewPurchases() {
