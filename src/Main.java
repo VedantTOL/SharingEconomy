@@ -100,7 +100,9 @@ public class Main {
 
                                 } else if (choice == 2) {
                                     Store store = buyer.viewStore(product);
+                                    // buyer.setShoppingCart(buyer.viewCart());
                                     buyer.addToShoppingCart(product, store);
+                                    // buyer.writeShoppingCart(buyer.getShoppingCart);
 
 
                                 } else if (choice == 3) {
@@ -119,32 +121,44 @@ public class Main {
                                 System.out.println("Taking you back to the marketplace menu...");
 
                             } else if (continueShopping == 2) {
-                                // call viewCart method here
+                                int removeFromCart = 0;
+                                do {
+                                    // ArrayList<Product> shoppingCart = buyer.viewCart()
+                                    // print out ArrayList here:
 
-                                System.out.println("Would you like to remove anything from your cart, purchase your cart," +
-                                        " or continue shopping?\n1. Remove item from cart.\n2. Purchase cart.\n3. Continue.");
+                                    System.out.println("Would you like to remove a product from your cart, purchase your cart," +
+                                            " or continue shopping?\n1. Remove item from cart.\n2. Purchase cart.\n3. Continue.");
 
-                                int purchaseCart = scanner.nextInt();
-                                scanner.nextLine();
+                                    int purchaseCart = scanner.nextInt();
+                                    scanner.nextLine();
 
-                                if (purchaseCart == 1) {
-                                    System.out.println("Which product would you like to remove from your cart? Please" +
-                                            "type the name of the product.");
-                                    // iterate through arrayList that was made from viewCart method and select the product
-                                    // that matches the name of the product the user typed
-                                    // buyer.removeFromShoppingCart(product);
+                                    if (purchaseCart == 1) {
+                                        System.out.println("Which product would you like to remove from your cart? Please" +
+                                                "type the name of the product.");
+                                        String productName = scanner.nextLine();
 
-                                } else if (purchaseCart == 2) {
-                                    ArrayList<Product> shoppingCart = buyer.getShoppingCart();
-                                    // need method to purchase whole cart
-                                }
+//                                     for (int i = 0; i < shoppingCart.size(); i++) {
+//                                         if (productName.equalsIgnoreCase(shoppingCart.get(i).getName())) {
+//                                             buyer.removeFromShoppingCart(shoppingCart.get(i));
+//                                         }
+//                                     }
+                                        // buyer.writeShoppingCart(shoppingCart)
+                                        removeFromCart = 1;
+
+
+
+                                    } else if (purchaseCart == 2) {
+                                        removeFromCart = buyer.purchaseCart();
+
+                                    }
+                                } while (removeFromCart == 1);
 
                             } else if (continueShopping == 3) {
-                                // need a method to view purchases
+                                // buyer.viewPurchases()
 
                             } else if (continueShopping == 4) {
                                 System.out.println("Thank you for shopping with us!");
-                                // write to purchases and shopping cart file
+                                // buyer.writePurchases()
                                 leave = true;
 
                             }
@@ -158,7 +172,7 @@ public class Main {
                                     continueShopping = 1;
 
                                 } else if (logOut == 2) {
-                                    // write to purchases and shopping cart file
+                                    // buyer.writePurchases()
                                     leave = true;
                                 }
                             }
