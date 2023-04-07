@@ -353,12 +353,30 @@ public class Buyer extends User {
         }
     }
 
-    public void purchaseCart() {
-        // reads the shopping cart file into an the arrayList and purchases every product
+    public int purchaseCart() {
+        // reads the shopping cart file into the arrayList and purchases every product
         ArrayList<Product> shoppingCart = new ArrayList<>(); // read file into this
+        double totalSum = 0;
         for (int i = 0; i < shoppingCart.size(); i++) {
+            totalSum = totalSum + shoppingCart.get(i).getPrice();
+        }
+
+        if (totalSum <= balance) {
+            purchases.addAll(shoppingCart);
+            shoppingCart.removeAll(purchases);
+            balance = balance - totalSum;
+            System.out.println("Thank you for your purchases!");
+            return 0;
+
+        } else if (totalSum > balance) {
+            System.out.println("ERROR! Transaction denied. Your balance is less than the total price of your cart.");
+            System.out.println("You will need to remove products until the total price is less than or equal to your balance");
+            System.out.printf("Total Price: %.2f\n", totalSum);
+            System.out.printf("Balance: %.2f\n", balance);
+            return 1;
 
         }
+        return 0;
     }
 
     public void writeShoppingCart(ArrayList<Product> shoppingCart) {
