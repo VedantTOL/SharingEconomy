@@ -2,13 +2,15 @@ import java.util.zip.DataFormatException;
 
 public class Product {
     private String name;
+    private String store;
     private String description;
     private int quantityForPurchase;
     private double price;
     private int quantitySold;
 
-    public Product(String name, String description, int quantityForPurchase, double price, int quantitySold) {
+    public Product(String name, String store, String description, int quantityForPurchase, double price, int quantitySold) {
         this.name = name;
+        this.store = store;
         this.description = description;
         this.quantityForPurchase = quantityForPurchase;
         this.price = price;
@@ -45,7 +47,14 @@ public class Product {
             throw new IllegalArgumentException("Quantity Sold must be an Integer");
         }
 
+    }
 
+    public String getStore() {
+        return store;
+    }
+
+    public void setStore(String store) {
+        this.store = store;
     }
 
     public int getQuantitySold() {
@@ -88,7 +97,7 @@ public class Product {
     public void setPrice(double price) {
         this.price = price;
     }
-    
+
     public String toString() {
         return String.format("%s, %s, %d, %d, %d", name, description, quantityForPurchase, price, quantitySold);
     }
