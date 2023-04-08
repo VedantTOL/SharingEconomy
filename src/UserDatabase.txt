@@ -4,3 +4,4 @@
 3, buyer@1, 1234, buyer, 12, -1
 4, asm@ask, 123, okdf, 32, -1
 5, dfikj@ifjd, 12, 12, 12, -1
+6, dfkdo@ofkg, 1234, fogk, 23, -1

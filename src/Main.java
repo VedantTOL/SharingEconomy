@@ -101,17 +101,17 @@ public class Main {
                             System.out.println("Come back later when sellers have stocked their stores!");
                         } else {
                             do {
-                                int i;
+                                int i = 1;
                                 for (Product product: productList) {
-                                    System.out.print
+                                    System.out.printf("%d. %s\n", i, product.marketplaceString());
+                                    i++;
                                 }
+
                                 System.out.println("Enter the number that corresponds to the product you would like to view.");
                                 int productNum = scanner.nextInt();
                                 scanner.nextLine();
-                                Product product = buyer.viewProduct(productList, productNum);
 
-                                System.out.println("Description: " + product.getDescription() +
-                                        "Quantity: " + product.getQuantityForPurchase());
+                                Product product = buyer.viewProduct(productList, productNum);
 
                                 System.out.println("Would you like to buy this product now, add it to your cart, or go back to the " +
                                         "previous page?\n1. Buy now\n" + "2. Add to cart\n" + "3. Previous page\n");

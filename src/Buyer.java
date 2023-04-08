@@ -237,24 +237,18 @@ public class Buyer extends User {
                     System.out.println("Enter the name of the product you want to buy.");
                     String nameProd = scanner.nextLine();
 
-                    ArrayList<String> nameProduct = new ArrayList<>();
+                    ArrayList<Product> nameProduct = new ArrayList<>();
 
                     for (Seller seller : searchProducts) {
                         for (Store store : seller.getStores()) {
                             for (Product product : store.getProducts()) {
-                                if (product.getName().equalsIgnoreCase(nameProd)) {
-                                    nameProduct.add(product.getName());
+                                if (product.getName().contains(nameProd)) {
+                                    nameProduct.add(product);
                                 }
                             }
                         }
-                        Collections.sort(nameProduct);
-
-                        String nameProductList = "";
-                        for (int i = 0; i < nameProduct.size(); i++) {
-                            nameProductList = nameProductList + (i + 1) + ". " + nameProduct.get(i) + "\n";
-                        }
-
-                        return nameProductList;
+                        Collections.sort(nameProduct,Comparator.comparing(Product::getName));
+                        return nameProduct;
                     }
                 }
 
@@ -262,49 +256,39 @@ public class Buyer extends User {
                     System.out.println("Enter the name of the store you want to buy from.");
                     String storeProd = scanner.nextLine();
 
-                    ArrayList<Product> storeName = new ArrayList<>(); //is it okay is i put
+                    Store storeName = null; //is it okay is i put
 
                     for (Seller seller : searchProducts) {
                         for (Store store : seller.getStores()) {
                             if (store.getStoreName().equals(storeProd)) {
-                                storeName = store.getProducts();
-
-                                break; // No need to continue searching after finding the store
+                                storeName = store;
                             }
                         }
                     }
 
-                    String storeProductList = "";
-                    for (int i = 0; i < storeName.size(); i++) {
-                        storeProductList = storeProductList + (i + 1) + ". " + storeName.get(i).getName() + "\n";
-                    }
-                    return storeProductList;
+                    return storeName.getProducts();
                 }
                 if (search == 3) { // description
 
                     System.out.println("Enter the description of the product you want to buy.");
                     String prodDescription = scanner.nextLine();
 
-                    ArrayList<String> descriptionProd = new ArrayList<>();
+                    ArrayList<Product> descriptionProd = new ArrayList<Product>();
 
                     for (Seller seller : searchProducts) {
                         for (Store store : seller.getStores()) {
                             for (Product product : store.getProducts()) {
-                                if (product.getDescription().equalsIgnoreCase(prodDescription)) {
+                                if (product.getDescription().contains(prodDescription)) {
                                     //descriptionProd.add(product); // should i just do product or product.getName()
-                                    descriptionProd.add(product.getName());
-
+                                    descriptionProd.add(product);
                                 }
                             }
                         }
                     }
-                    Collections.sort(descriptionProd);
+                    Collections.sort(descriptionProd, Comparator.comparing(Product::getName));
 
-                    String descriptionProductList = "";
-                    for (int i = 0; i < descriptionProd.size(); i++) {
-                        descriptionProductList = descriptionProductList + (i + 1) + ". " + descriptionProd.get(i) + "\n";
-                    }
-                    return descriptionProductList;
+
+                    return descriptionProd;
                 }
             } while(search != 1 && search != 2 && search != 3);
         }
@@ -348,26 +332,9 @@ public class Buyer extends User {
     }
 
     public Product viewProduct(ArrayList<Product> productList, int productNum) {
-        String[] productStringArray = productList.split("\n");
-        String productName = "";
-        for (int i = 0; i < productStringArray.length; i++) {
-            if (productNum == i+1) {
-                productName = productStringArray[i].split("[. ]")[1];
-            }
-
-            // I think this works
-            ArrayList<Seller> fetchProduct = readSellerDatabase();
-            for (Seller seller: fetchProduct) {
-                for (Store store : seller.getStores()) {
-                    for (Product product : store.getProducts()) {
-                        if (product.getName().equals(productName)) {
-                            return product;
-                        }
-                    }
-                }
-            }
-        }
-        return null;
+        Product selected = productList.get(productNum);
+        System.out.println(selected.productPage());
+        return selected;
     }
 
     /*public Store viewStore(Product product) {

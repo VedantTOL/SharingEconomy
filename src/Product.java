@@ -114,6 +114,11 @@ public class Product {
     public String marketplaceString() {
         return String.format("Name: %s Price: $%.2f", name, price);
     }
+
+    public String productPage() {
+        return String.format("Name: %s\nPrice: $%.2f\nDescription: %s\nQuantity Available: %d\nQuantity Sold: %d", name, price, description, quantityForPurchase, quantitySold);
+
+    }
 /*
     Comparator<Product> compareByPrice = (Product o1, Product o2) ->
             o1.getPrice().compareTo( o2.getPrice() );
