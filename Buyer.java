@@ -524,5 +524,5 @@ public class Buyer extends User {
 
         return null;
     }
-    
+
 }
