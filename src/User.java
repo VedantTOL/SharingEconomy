@@ -9,20 +9,32 @@ public class User {
     private String name;
     private int age;
 
+    public int getSellerIndex() {
+        return sellerIndex;
+    }
+
+    public void setSellerIndex(int sellerIndex) {
+        this.sellerIndex = sellerIndex;
+    }
+
+    private int sellerIndex;
+
     public User() {
         this.uniqueIdentifier = -1;
         this.email = null;
         this.password = null;
         this.name = null;
         this.age = 0;
+        this.sellerIndex = -2;
     }
 
-    public User(int uniqueIdentifier, String email, String password, String name, int age) {
+    public User(int uniqueIdentifier, String email, String password, String name, int age, int sellerIndex) {
         this.uniqueIdentifier = uniqueIdentifier;
         this.email = email;
         this.password = password;
         this.name = name;
         this.age = age;
+        this.sellerIndex = sellerIndex;
     }
     public User(int uniqueIdentifier) {
         this.uniqueIdentifier = uniqueIdentifier;
@@ -31,10 +43,14 @@ public class User {
         this.password = database.get(uniqueIdentifier).getPassword();
         this.name = database.get(uniqueIdentifier).getName();
         this.age = database.get(uniqueIdentifier).getAge();
+        this.sellerIndex = database.get(uniqueIdentifier).getSellerIndex();
     }
 
+
+
+
     public User(String[] userDetails) throws UserDatabaseFormatError {
-        if (userDetails.length != 5) {
+        if (userDetails.length != 6) {
             throw new UserDatabaseFormatError("Insufficient Details, please try again!");
         }
 
@@ -63,6 +79,8 @@ public class User {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Age must be an Integer");
         }
+
+        this.sellerIndex = Integer.parseInt(userDetails[5]);
 
 
     }
@@ -136,14 +154,14 @@ public class User {
 
             }
 
-
+        bfr.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
         return database;
 
     }
-    public User addUser(Scanner scanner){
+    public User addUser(Scanner scanner, boolean seller){
         String email;
         String password;
         String name;
@@ -168,9 +186,28 @@ public class User {
         age = scanner.nextInt();
         scanner.nextLine();
 
+
         ArrayList<User> database = readUserDatabase("./src/UserDatabase.txt");
-        uniqueId = database.get(database.size() - 1).getUniqueIdentifier() + 1;
-        User user = new User(uniqueId, email, password, name, age);
+        if (database.size() != 0) {
+            uniqueId = database.get(database.size() - 1).getUniqueIdentifier() + 1;
+        } else {
+            uniqueId = 0;
+        }
+
+        int sellerIndex = -1;
+        if (!seller) {
+            sellerIndex = -1;
+        } else {
+            sellerIndex = 0;
+            for (int i = database.size(); i > 0; i--) {
+                int topIndex = database.get(i - 1).getSellerIndex();
+                if (topIndex != - 1) {
+                    sellerIndex = topIndex + 1;
+                    break;
+                }
+            }
+        }
+        User user = new User(uniqueId, email, password, name, age, sellerIndex);
         database.add(user);
 
         File f;
@@ -184,6 +221,12 @@ public class User {
                 bw.write("\n");
             }
             bw.close();
+            if (seller) {
+                bw = new BufferedWriter(new FileWriter("./src/SellerDatabase.txt", true));
+                bw.write(String.format("* %d\n", sellerIndex));
+                bw.close();
+
+            }
             return user;
         } catch (IOException e) {
             return null;
@@ -201,13 +244,13 @@ public class User {
     }
 
     public String constructorString() {
-        return String.format("%d, %s, %s, %s, %d", this.getUniqueIdentifier(), this.getEmail(), this.getPassword(), this.getName(), this.getAge());
+        return String.format("%d, %s, %s, %s, %d, %d", this.getUniqueIdentifier(), this.getEmail(), this.getPassword(), this.getName(), this.getAge(), this.getSellerIndex());
     }
 
     public String toString() {
         return String.format("ID = <%d>\nEmail = <%s>\nPassword = <****>\nName = <%s>\nAge <%d>", this.getUniqueIdentifier(), this.getEmail(), this.getPassword(), this.getName(), this.getAge());
     }
-    public User login(Scanner scanner) {
+    public User login(Scanner scanner, boolean seller) {
         ArrayList<User> database = readUserDatabase("./src/UserDatabase.txt");
         System.out.println("Email: ");
         String emailCheck = scanner.nextLine();
@@ -217,15 +260,31 @@ public class User {
         for (User user: database) {
             if (user.getEmail().equals(emailCheck)) {
                 if(user.getPassword().equals(passwordCheck)) {
-                    System.out.println("Login Successful!");
-                    return user;
+                    if (seller) {
+                        if (user.getSellerIndex() != -1) {
+                            System.out.println("Login Successful!");
+                            return user;
+                        } else {
+                            System.out.println("Wrong Account Type!");
+                            return null;
+                        }
+
+                    } else {
+                        if (user.getSellerIndex() == 0) {
+                            System.out.println("Login Successful!");
+                            return user;
+                        } else {
+                            System.out.println("Wrong Account Type!");
+                            return null;
+                        }
+                    }
                 } else {
-                    System.out.println("Incorrect Password!");
-                    return null;
+                        System.out.println("Incorrect Password!");
+                        return null;
                 }
             }
         }
-        System.out.println("Invalid email!");
+        System.out.println("Email does not exist in records!");
         return null;
     }
 
