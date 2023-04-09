@@ -1,8 +1,5 @@
-import java.sql.Array;
-import java.util.ArrayList;
+import java.util.*;
 import java.io.*;
-import java.util.InputMismatchException;
-import java.util.Scanner;
 import java.util.zip.DataFormatException;
 
 public class Seller extends User {
@@ -292,12 +289,13 @@ public class Seller extends User {
                         this.getStores().add(edit);
                     }
                 }
+
                 break;
             }
+            writeToDatabase(false);
         } else if (decision == 4) {
             getSellerStatistics(scanner);
         }
-        writeToDatabase(false);
     }
 
     public String productName(int items) {
@@ -361,7 +359,7 @@ public class Seller extends User {
                     for (Store store : seller.getStores()) {
                         bw.write(String.format("+ %s\n", store.getStoreName()));
                         for (Product product : store.getProducts()) {
-                            bw.write(product.toString());
+                            bw.write(product.toDatabase());
                             bw.write("\n");
                         }
                     }
@@ -437,6 +435,102 @@ public class Seller extends User {
                         }
                     }
 
+                } else if (choice == 2) {
+                    ArrayList<Store> storeStat = this.getStores();
+                    do {
+                        System.out.println("How would you like to sort?");
+                        System.out.printf("1. Quantity Sold\n2. Total Revenue\n3. Stock Remaining\n");
+                        int decision = readInt(scanner.nextLine());
+                        if (decision != -1) {
+                            if (decision == 1) {
+                                Collections.sort(storeStat, Comparator.comparingInt(Store::getTotalQuantitySold).reversed());
+                                int i = 1;
+                                for (Store store : storeStat) {
+                                    System.out.printf("%d. %s\n", i, store.getStoreName());
+                                    System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                                    System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                                    System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                                    i++;
+                                }
+                                break;
+                            } else if (decision == 2) {
+                                Collections.sort(storeStat, Comparator.comparingDouble(Store::getTotalValueSold).reversed());
+                                int i = 1;
+                                for (Store store : storeStat) {
+                                    System.out.printf("%d. %s\n", i, store.getStoreName());
+                                    System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                                    System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                                    System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                                    i++;
+                                }
+                                break;
+
+                            } else if (decision == 3) {
+                                Collections.sort(storeStat, Comparator.comparingInt(Store::getStockRemaining).reversed());
+                                int i = 1;
+                                for (Store store : storeStat) {
+                                    System.out.printf("%d. %s\n", i, store.getStoreName());
+                                    System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                                    System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                                    System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                                    i++;
+                                }
+                                break;
+                            }
+                        }
+
+
+                    } while (!exitCondition);
+
+                } else if (choice == 3) {
+
+                    ArrayList<Product> productStat = sellerProducts;
+                    do {
+                        exitCondition = true;
+                        System.out.println("How would you like to sort?");
+                        System.out.printf("1. Quantity Sold\n2. Total Revenue\n3. Stock Remaining\n");
+                        int decision = readInt(scanner.nextLine());
+                        if (decision != -1) {
+                            if (decision == 1) {
+                                Collections.sort(productStat, Comparator.comparingInt(Product::getQuantitySold).reversed());
+                                int i = 1;
+                                for (Product product : productStat) {
+                                    System.out.printf("%d. %s\n", i, product.getName());
+                                    System.out.printf("\tQuantity Sold: %d\n", product.getQuantitySold());
+                                    System.out.printf("\tTotal Revenue: %.2f\n", product.getQuantitySold() * product.getPrice());
+                                    System.out.printf("\tStock Remaining: %d\n", product.getQuantityForPurchase());
+                                    i++;
+                                }
+                                break;
+                            } else if (decision == 2) {
+                                Collections.sort(productStat, Comparator.comparingDouble(Product::getValueSold).reversed());
+                                int i = 1;
+                                for (Product product : productStat) {
+                                    System.out.printf("%d. %s\n", i, product.getName());
+                                    System.out.printf("\tQuantity Sold: %d\n", product.getQuantitySold());
+                                    System.out.printf("\tTotal Revenue: %.2f\n", product.getQuantitySold() * product.getPrice());
+                                    System.out.printf("\tStock Remaining: %d\n", product.getQuantityForPurchase());
+                                    i++;
+                                }
+                                break;
+
+                            } else if (decision == 3) {
+                                Collections.sort(productStat, Comparator.comparingInt(Product::getQuantityForPurchase).reversed());
+                                int i = 1;
+                                for (Product product : productStat) {
+                                    System.out.printf("%d. %s\n", i, product.getName());
+                                    System.out.printf("\tQuantity Sold: %d\n", product.getQuantitySold());
+                                    System.out.printf("\tTotal Revenue: %.2f\n", product.getQuantitySold() * product.getPrice());
+                                    System.out.printf("\tStock Remaining: %d\n", product.getQuantityForPurchase());
+                                    i++;
+                                }
+                                break;
+                            } else {
+                                System.out.println("Please enter valid menu choice!");
+                                exitCondition = false;
+                            }
+                        } while (!exitCondition);
+                    } while (!exitCondition);
                 }
 
             } else {

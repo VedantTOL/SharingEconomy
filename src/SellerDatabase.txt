@@ -1,8 +1,12 @@
 * 0
 + cokfod
-1, Eidted, sdfk, 0, 23.00, 0
-4, added, dofk, 0, 12.00, 0
+1, Eidted, sdfk, 35, 23.00, 12
+4, added, dofk, 20, 12.00, 23
 + StorenNNEw
+5, BMW, black, 12, 20.00, 34
+5, CAMA, green, 23, 34.00, 54
++ new
+7, CHORME, jacko, 12, 23.00, 1
 * 1
 + plp
 2, adfokk, adofkk, 0, 32.00, 0

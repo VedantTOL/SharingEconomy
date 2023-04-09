@@ -1,5 +1,4 @@
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -186,7 +185,7 @@ public class Buyer extends User {
                 if (buyer.getShoppingCart() != null) {
                     bw.write("+ ");
                     for (ProductPurchase productPurchase : buyer.shoppingCart) {
-                        bw.write(productPurchase.toString());
+                        bw.write(productPurchase.toDatabase());
                         bw.write(", ");
                         bw.flush();
                     }
@@ -195,7 +194,7 @@ public class Buyer extends User {
                 if (buyer.getPurchases() != null) {
                     bw.write("- ");
                     for (ProductPurchase productPurchase : buyer.purchases) {
-                        bw.write(productPurchase.toString());
+                        bw.write(productPurchase.toDatabase());
                         bw.write(", ");
                         bw.flush();
                     }

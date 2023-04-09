@@ -15,7 +15,7 @@ public class ProductPurchase extends Product{
     }
 
 
-    public String toString() {
+    public String toDatabase() {
         return String.format("%d:%d", this.getUniqueID(), orderQuantity);
     }
 }

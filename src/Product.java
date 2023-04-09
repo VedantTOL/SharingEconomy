@@ -2,9 +2,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.zip.DataFormatException;
-import java.util.Collections;
 
 public class Product {
     private String name;
@@ -104,6 +102,10 @@ public class Product {
         }
     }
 
+    public double getValueSold() {
+        return getPrice() * getQuantitySold();
+    }
+
     public Product(String[] productDetails) throws DataFormatException{
         if (productDetails.length != 6) {
             throw new DataFormatException("Insufficient Details, please try again!");
@@ -130,7 +132,7 @@ public class Product {
         }
 
         try {
-            this.quantityForPurchase = Integer.parseInt(productDetails[5]);
+            this.quantitySold = Integer.parseInt(productDetails[5]);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Quantity Sold must be an Integer");
         }
@@ -179,7 +181,7 @@ public class Product {
         this.price = price;
     }
     
-    public String toString() {
+    public String toDatabase() {
         return String.format("%d, %s, %s, %d, %.2f, %d", uniqueID, name, description, quantityForPurchase, price, quantitySold);
     }
 
