@@ -436,12 +436,17 @@ public class Buyer extends User {
     public int purchaseCart() {
 
         ArrayList<ProductPurchase> shoppingCart = viewCart();
+        ArrayList<Seller> sellers = readSellerDatabase();
+
         double totalSum = 0;
         for (ProductPurchase productPurchase : shoppingCart) {
-            totalSum = totalSum + productPurchase.getPrice();
+            totalSum = totalSum + (productPurchase.getPrice() * productPurchase.getOrderQuantity());
         }
 
         if (totalSum <= balance) {
+            for (ProductPurchase productPurchase : shoppingCart) {
+                productPurchase.setQuantityForPurchase(productPurchase.getQuantityForPurchase() - productPurchase.getOrderQuantity());
+            }
             purchases.addAll(shoppingCart);
             shoppingCart.removeAll(purchases);
             balance = balance - totalSum;
@@ -454,7 +459,6 @@ public class Buyer extends User {
             System.out.printf("Total Price: %.2f\n", totalSum);
             System.out.printf("Balance: %.2f\n", balance);
             return 1;
-
         }
         return 0;
     }
