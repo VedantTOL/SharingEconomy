@@ -14,6 +14,7 @@ public class ProductPurchase extends Product{
         this.orderQuantity = orderQuantity;
     }
 
+
     public String toString() {
         return String.format("%d:%d", this.getUniqueID(), orderQuantity);
     }

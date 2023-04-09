@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.zip.DataFormatException;
 import java.util.Collections;
@@ -18,6 +19,8 @@ public class Product {
     private int quantityForPurchase;
     private double price;
     private int quantitySold;
+
+
 
     public Product(String name, String description, int quantityForPurchase, double price, int quantitySold, int uniqueID) {
         this.name = name;

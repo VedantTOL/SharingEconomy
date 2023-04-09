@@ -8,8 +8,8 @@ import java.util.zip.DataFormatException;
 
 public class Buyer extends User {
     private double balance;
-    private ArrayList<ProductPurchase> shoppingCart;
-    private ArrayList<ProductPurchase> purchases;
+    protected ArrayList<ProductPurchase> shoppingCart;
+    protected ArrayList<ProductPurchase> purchases;
 
     public Buyer(int uniqueIdentifier, String email, String password, String name, int age, double balance) {
         super(uniqueIdentifier, email, password, name, age, -1);
@@ -46,128 +46,6 @@ public class Buyer extends User {
 
     public void setPurchases(ArrayList<ProductPurchase> purchases) {
         this.purchases = purchases;
-    }
-
-    public ArrayList<Buyer> readBuyerDatabase() throws DataFormatException, IOException {
-        ArrayList<Buyer> database = new ArrayList<Buyer>();
-        ArrayList<Product> productDatabase = getProductDatabase();
-        String line;
-        Buyer buyer = null;
-
-        BufferedReader bfr = null;
-        try {
-            bfr = new BufferedReader(new FileReader("./src/BuyerDatabase.txt"));
-            while (true) {
-                line = bfr.readLine();
-                if (line == null) {
-                    break;
-                }
-                char identifier = line.charAt(0);
-
-                if (identifier == 42) {
-                    buyer = new Buyer(Integer.parseInt(line.split(" ")[1]));
-                    database.add(buyer);
-                } else if (identifier == 43) {
-                    line = line.substring(1);
-                    String[] cartList = line.split(", ");
-                    for (String productID: cartList) {
-                        int tempID = Integer.parseInt(productID.split(":")[0]);
-                        int tempQuantity = Integer.parseInt(productID.split(":")[1]);
-                        for (Product product: productDatabase) {
-                            if (tempID == product.getUniqueID()){
-                                buyer.shoppingCart.add(new ProductPurchase(product.getUniqueID(), tempQuantity));
-                            }
-                        }
-
-                    }
-
-                } else if (identifier == '+') {
-                    line = line.substring(1);
-                    String[] purchasedList = line.split(", ");
-                    for (String productID: purchasedList) {
-                        int tempID = Integer.parseInt(productID.split(":")[0]);
-                        int tempQuantity = Integer.parseInt(productID.split(":")[1]);
-                        for (Product product: productDatabase) {
-                            if (tempID == product.getUniqueID()){
-                                buyer.purchases.add(new ProductPurchase(product.getUniqueID(), tempQuantity));
-                            }
-                        }
-                    }
-                }
-
-            }
-
-
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return database;
-
-    }
-
-    public ArrayList<Seller> readSellerDatabase() {
-        File f;
-        FileReader fr;
-        BufferedReader bfr;
-        String line;
-        ArrayList<Seller> database= new ArrayList<Seller>();
-        Seller seller;
-        Store store;
-        Product product;
-        int sellerIndex = -1;
-        int storeIndex = -1;
-
-        try {
-            bfr = new BufferedReader(new FileReader(new File("./src/SellerDatabase.txt")));
-
-            while (true) {
-                line = bfr.readLine();
-                //System.out.println();
-                if (line == null) {
-                    break;
-                }
-                char identifier = line.charAt(0);
-                if (identifier == 42) {
-                    sellerIndex++;
-                    storeIndex = -1;
-                    seller = new Seller(Integer.parseInt(line.split(" ")[1]));
-                    database.add(seller);
-                } else if (identifier == 43) {
-                    storeIndex++;
-                    store = new Store(line.split(" ")[1]);
-                    database.get(sellerIndex).addStore(store);
-                } else {
-                    try {
-                        product = new Product(line.split(", "));
-                        System.out.println(storeIndex);
-                        database.get(sellerIndex).getStores().get(storeIndex).addProduct(product);
-                    } catch (DataFormatException e) {
-                        System.out.println("Seller Database Malformed!");
-                    }
-                }
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return database;
-
-    }
-
-    public ArrayList<Product> getProductDatabase() {
-        ArrayList<Seller> database= readSellerDatabase();
-        ArrayList<Product> productDatabase = new ArrayList<Product>();
-        for (Seller seller: database) {
-            for (Store store : seller.getStores()) {
-                for (Product product : store.getProducts()) {
-                    productDatabase.add(product);
-                }
-            }
-        }
-        return productDatabase;
     }
 
     public ArrayList<Product> viewMarketPlace(int choice, Scanner scanner) {
