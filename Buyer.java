@@ -177,10 +177,14 @@ public class Buyer extends User {
                 return null;
             }
 
-            System.out.println("How would you like to sort the marketplace?\n1. Price \n2. Quantity\n " +
-                    "3. Name\n");
+            int sort;
+            do {
+                System.out.println("How would you like to sort the marketplace?\n1. Price \n2. Quantity\n " +
+                        "3. Name\n");
+                String sorting = scanner.nextLine();
+                sort = readInt(sorting);
+            } while (sort == -1);
 
-            int sort = scanner.nextInt();
             do {
                 if (sort == 1) {
                     ArrayList<Product> productPrices= new ArrayList<Product>();
@@ -228,9 +232,13 @@ public class Buyer extends User {
 
         } else if (choice == 2) {
             ArrayList<Seller> searchProducts = readSellerDatabase();
-            System.out.println("What would you like to search for?\n1.Name \n2. Store\n3. Description");
-            int search = scanner.nextInt();
-            scanner.nextLine();
+
+            int search;
+            do {
+                System.out.println("What would you like to search for?\n1.Name \n2. Store\n3. Description");
+                String searching = scanner.nextLine();
+                search = readInt(searching);
+            } while (search == -1);
 
             do{
                 if (search == 1) {
@@ -368,8 +376,8 @@ public class Buyer extends User {
     public void removeFromShoppingCart(Product product) {
         int index = 0;
         for (int i = 0; i < shoppingCart.size(); i++) {
-            if (shoppingCart.get(i).equals(product)) {
-                shoppingCart.remove(product);
+            if (shoppingCart.get(i).getUniqueID() == product.getUniqueID()) {
+                shoppingCart.remove(i);
                 System.out.printf("%s has been removed from the shopping cart!\n", product.getName());
                 index++;
             }
@@ -523,6 +531,17 @@ public class Buyer extends User {
         }
 
         return null;
+    }
+
+    public static int readInt(String input) {
+        int result;
+        try {
+            result = Integer.parseInt(input);
+            return result;
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter a valid Integer!");
+            return -1;
+        }
     }
 
 }
