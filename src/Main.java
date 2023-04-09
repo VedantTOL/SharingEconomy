@@ -1,11 +1,13 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
+import java.util.zip.DataFormatException;
 
 public class Main {
     public static final String EXIT = "Thank you! Please come again!"; //Displayed when user exits the program.
     public static final String INVALID_OPTION = "Please select a valid menu option!";
-    public static void main(String[] args) {
+    public static void main(String[] args) throws DataFormatException, IOException {
         User loginAccess = new User();
         User user = null;
         boolean isSeller = false;

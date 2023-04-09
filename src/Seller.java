@@ -1,4 +1,4 @@
-import java.lang.reflect.Array;
+import java.sql.Array;
 import java.util.ArrayList;
 import java.io.*;
 import java.util.InputMismatchException;
@@ -52,7 +52,7 @@ public class Seller extends User {
 
 
 
-    public void sellerMenu(Scanner scanner) {
+    public void sellerMenu(Scanner scanner) throws DataFormatException, IOException {
         int decision;
         this.setStores(readSellerDatabase().get(getSellerIndex()).getStores());
         while (true) {
@@ -61,10 +61,11 @@ public class Seller extends User {
                     "2. Delete" +
                     " store\n" +
                     "3. Edit store");
+            System.out.println("4. View Statistics");
             try {
                 decision = scanner.nextInt();
                 scanner.nextLine();
-                if (decision != 1 && decision != 2 && decision != 3) {
+                if (decision != 1 && decision != 2 && decision != 3 && decision != 4) {
                     System.out.println("Please enter a valid option!");
                 } else {
                     break;
@@ -293,6 +294,8 @@ public class Seller extends User {
                 }
                 break;
             }
+        } else if (decision == 4) {
+            getSellerStatistics(scanner);
         }
         writeToDatabase(false);
     }
@@ -382,10 +385,67 @@ public class Seller extends User {
         }
     }
 
-    public void getStatistics() throws DataFormatException, IOException {
+    public void getSellerStatistics(Scanner scanner) throws DataFormatException, IOException {
         ArrayList<Seller> sellerDatabase = readSellerDatabase();
         ArrayList<Buyer> buyerDatabase = readBuyerDatabase();
         ArrayList<Product> productDatabase = getProductDatabase();
+
+
+
+        //list of customers with items purchase, list of products with sales
+        ArrayList<Product> sellerProducts = new ArrayList<Product>();
+
+        for (Store store: this.getStores()) {
+            for (Product product: store.getProducts()) {
+                sellerProducts.add(product);
+            }
+        }
+
+
+
+
+        boolean exitCondition = true;
+        do {
+            System.out.println("How would you like to view the statistics?");
+            System.out.println("1. By Customer");
+            System.out.println("2. By Store");
+            System.out.println("3. All Products");
+            System.out.println("4. Exit");
+
+            int choice = readInt(scanner.nextLine());
+            if (choice != -1) {
+                if (choice == 1) {
+                    int itemsPurchased;
+                    double totalSpent;
+                    ArrayList<Buyer> customers = new ArrayList<Buyer>();
+                    for (Buyer buyer: buyerDatabase) {
+                        itemsPurchased = 0;
+                        totalSpent = 0;
+                        for (ProductPurchase purchase: buyer.getPurchases()) {
+                            for (Product product: sellerProducts) {
+                                if (product.getUniqueID() == purchase.getUniqueID()) {
+                                    customers.add(buyer);
+                                    itemsPurchased += purchase.getOrderQuantity();
+                                    totalSpent += purchase.getOrderQuantity() * purchase.getPrice();
+                                    break;
+                                }
+                            }
+                        }
+                        if (customers.contains(buyer)) {
+                            System.out.printf("Customer Name: %s\n\tItems Purchased: %d\n\tTotal Value (with current prices): %.2f\n",
+                                    buyer.getName(), itemsPurchased, totalSpent);
+                        }
+                    }
+
+                }
+
+            } else {
+                exitCondition = false;
+            }
+
+        } while (!exitCondition);
+
+
     }
 
     public static double readDouble(String input) {

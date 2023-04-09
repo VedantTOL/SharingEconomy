@@ -1,3 +1,6 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.zip.DataFormatException;
@@ -20,8 +23,65 @@ public class Product {
     private double price;
     private int quantitySold;
 
+    public ArrayList<Seller> readSellerDatabase() {
+        BufferedReader bfr = null;
+        String line;
+        ArrayList<Seller> database = new ArrayList<Seller>();
+        Seller seller;
+        Store store;
+        Product product;
+        int sellerIndex = -1;
+        int storeIndex = -1;
 
+        try {
+            bfr = new BufferedReader(new FileReader("./src/SellerDatabase.txt"));
 
+            while (true) {
+                line = bfr.readLine();
+
+                if (line == null) {
+                    break;
+                }
+                char identifier = line.charAt(0);
+                if (identifier == 42) {
+                    sellerIndex++;
+                    storeIndex = -1;
+                    seller = new Seller(Integer.parseInt(line.split(" ")[1]));
+                    database.add(seller);
+                } else if (identifier == 43) {
+                    storeIndex++;
+                    store = new Store(line.split(" ")[1]);
+                    database.get(sellerIndex).addStore(store);
+                } else {
+                    try {
+                        product = new Product(line.split(", "));
+                        database.get(sellerIndex).getStores().get(storeIndex).addProduct(product);
+                    } catch (DataFormatException e) {
+                        System.out.println("Seller Database Malformed!");
+                    }
+                }
+
+            }
+
+            bfr.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return database;
+
+    }
+    public ArrayList<Product> getProductDatabase() {
+        ArrayList<Seller> database = readSellerDatabase();
+        ArrayList<Product> productDatabase = new ArrayList<Product>();
+        for (Seller seller: database) {
+            for (Store store : seller.getStores()) {
+                for (Product product : store.getProducts()) {
+                    productDatabase.add(product);
+                }
+            }
+        }
+        return productDatabase;
+    }
     public Product(String name, String description, int quantityForPurchase, double price, int quantitySold, int uniqueID) {
         this.name = name;
         this.description = description;
@@ -31,8 +91,17 @@ public class Product {
         this.uniqueID = uniqueID;
     }
     public Product(int uniqueID) {
-
-
+        this.uniqueID = uniqueID;
+        ArrayList<Product> productDatabase = getProductDatabase();
+        for (Product product: productDatabase) {
+            if (uniqueID == product.getUniqueID()) {
+                this.description = product.getDescription();
+                this.quantityForPurchase = product.getQuantityForPurchase();
+                this.price = product.getPrice();
+                this.quantitySold = product.getQuantitySold();
+                this.name = product.getName();
+            }
+        }
     }
 
     public Product(String[] productDetails) throws DataFormatException{

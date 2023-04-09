@@ -441,6 +441,7 @@ public class User {
     public ArrayList<Buyer> readBuyerDatabase() throws DataFormatException, IOException {
         ArrayList<Buyer> database = new ArrayList<Buyer>();
         ArrayList<Product> productDatabase = getProductDatabase();
+
         String line;
         Buyer buyer = null;
 
@@ -454,34 +455,43 @@ public class User {
                 }
                 char identifier = line.charAt(0);
 
-                if (identifier == 42) {
+                if (identifier == '*') {
                     buyer = new Buyer(Integer.parseInt(line.split(" ")[1]));
                     database.add(buyer);
-                } else if (identifier == 43) {
-                    line = line.substring(1);
+                } else if (identifier == '+') {
+                    line = line.substring(2);
                     String[] cartList = line.split(", ");
                     for (String productID: cartList) {
                         int tempID = Integer.parseInt(productID.split(":")[0]);
                         int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                        buyer.getShoppingCart().add(new ProductPurchase(tempID, tempQuantity));
+                        /*
                         for (Product product: productDatabase) {
                             if (tempID == product.getUniqueID()){
                                 buyer.shoppingCart.add(new ProductPurchase(product.getUniqueID(), tempQuantity));
                             }
                         }
+                        */
 
                     }
 
-                } else if (identifier == '+') {
-                    line = line.substring(1);
+                } else if (identifier == '-') {
+                    line = line.substring(2);
+                    System.out.println(line);
                     String[] purchasedList = line.split(", ");
                     for (String productID: purchasedList) {
                         int tempID = Integer.parseInt(productID.split(":")[0]);
+                        System.out.println(tempID);
                         int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                        buyer.getPurchases().add(new ProductPurchase(tempID, tempQuantity));
+
+                        /*
                         for (Product product: productDatabase) {
                             if (tempID == product.getUniqueID()){
-                                buyer.purchases.add(new ProductPurchase(product.getUniqueID(), tempQuantity));
-                            }
+
                         }
+
+                         */
                     }
                 }
 
