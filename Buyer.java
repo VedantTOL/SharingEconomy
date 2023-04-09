@@ -445,7 +445,9 @@ public class Buyer extends User {
 
         if (totalSum <= balance) {
             for (ProductPurchase productPurchase : shoppingCart) {
-                productPurchase.setQuantityForPurchase(productPurchase.getQuantityForPurchase() - productPurchase.getOrderQuantity());
+                if (productPurchase.getOrderQuantity() <= productPurchase.getQuantityForPurchase()) {
+                    productPurchase.setQuantityForPurchase(productPurchase.getQuantityForPurchase() - productPurchase.getOrderQuantity());
+                }
             }
             purchases.addAll(shoppingCart);
             shoppingCart.removeAll(purchases);
@@ -465,32 +467,36 @@ public class Buyer extends User {
 
 
     public ArrayList<ProductPurchase> viewCart() {
+        ArrayList<ProductPurchase> shoppingCart = null;
+        
         try {
             ArrayList<Buyer> buyers = readBuyerDatabase();
             for (Buyer buyer : buyers) {
                 if (buyer.getUniqueIdentifier() == getUniqueIdentifier()) {
-                    return buyer.getShoppingCart();
+                    shoppingCart = buyer.getShoppingCart();
                 }
             }
 
         } catch (IOException | DataFormatException e) {
             throw new RuntimeException();
         }
-        return null;
+        return shoppingCart;
     }
     public ArrayList<ProductPurchase> viewPurchases() {
+        ArrayList<ProductPurchase> purchases = null;
+        
         try {
             ArrayList<Buyer> buyers = readBuyerDatabase();
             for (Buyer buyer : buyers) {
                 if (buyer.getUniqueIdentifier() == getUniqueIdentifier()) {
-                    return buyer.getPurchases();
+                    purchases = buyer.getPurchases();
                 }
             }
 
         } catch (IOException | DataFormatException e) {
             throw new RuntimeException();
         }
-        return null;
+        return purchases;
     }
 
     public Seller shopBySeller(Scanner scanner) {
