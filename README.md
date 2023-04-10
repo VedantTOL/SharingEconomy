@@ -77,12 +77,12 @@ The following methods are:
 including the number of products, the store name, each price, quantity, and description. This
 then adds the store to the text file containing all the stores and products.</p>
 <h3>Delete Store</h3>
-<p>If the user elects to delete the store, a list of stores appears that are numbered.
+<p>If the user selects to delete the store, a list of stores appears that are numbered.
 They then type in the number of the store that they would like to delete, and then the store
 and all of it's contents are then removed. The text file is then updated not including the name 
 of the store and it's products that were removed by the seller.</p>
 <h3>Edit Store</h3>
-<p>If the user elects to edit the store, another menu pops up that lists the stores, exactly the same
+<p>If the user selects to edit the store, another menu pops up that lists the stores, exactly the same
 way it is shown when asking the seller to delete a store. They then enter the number of the store 
 they would like to edit. After choosing the store to edit, they are presented with the options to 
 edit the store name, add products to a store, edit products, and delete products.<p></p>
@@ -90,7 +90,7 @@ edit the store name, add products to a store, edit products, and delete products
 updated to the text containing the stores and products. <p>
 <p>If they choose to add products, they are presented with a series 
 of questions to identify all the necessary information about the product.<p> 
-<p>If they elect to edit products, they are presented with a list of all the products in the store which
+<p>If they select to edit products, they are presented with a list of all the products in the store which
 are numbered, and they type the number of the product they would like to edit. They are then asked to set 
 the new details of the product, which are updated to the stores text file. Lastly, the options to remove 
 products displays the list of products contained within the store. The seller then types the number of the
