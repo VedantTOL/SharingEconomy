@@ -52,6 +52,7 @@ public class Seller extends User {
     public void sellerMenu(Scanner scanner) throws DataFormatException, IOException {
         int decision;
         this.setStores(readSellerDatabase().get(getSellerIndex()).getStores());
+
         while (true) {
             System.out.println("What actions would you like to take?\n" +
                     "1. Add store\n" +
@@ -95,207 +96,219 @@ public class Seller extends User {
                 double price = scanner.nextDouble();
                 scanner.nextLine();
 
-                int uniqueID = getProductDatabase().size() + 1;
+                int uniqueID = getProductDatabase().size() + 1 + i;
 
                 Product product = new Product(name, description, stock, price, 0, uniqueID );
                 products.add(product);
+
             }
 
             Store store = new Store(storeName, products);
             this.addStore(store);
             writeToDatabase(false);
         } else if (decision == 2) {//Delete Store
+
             int i = 1;
+            if (this.getStores().size() == 0) {
+                System.out.println("You have no stores, please add one!");
+            } else {
 
-            for (Store store : this.getStores()) {
-                System.out.printf("%d: %s\n", i, store.getStoreName());
-                i++;
-            }
-
-
-            while (true) {
-                System.out.println("Enter the store index you want to delete: ");
-                String storeNameToDelete = scanner.nextLine();
-                int toDelete = readInt(storeNameToDelete);
-                if (toDelete != -1) {
-                    this.getStores().remove(toDelete - 1);
-                    break;
+                for (Store store : this.getStores()) {
+                    System.out.printf("%d: %s\n", i, store.getStoreName());
+                    i++;
                 }
+
+
+                while (true) {
+                    System.out.println("Enter the store index you want to delete: ");
+                    String storeNameToDelete = scanner.nextLine();
+                    int toDelete = readInt(storeNameToDelete);
+                    if (toDelete != -1) {
+                        this.getStores().remove(toDelete - 1);
+                        break;
+                    }
+                }
+                writeToDatabase(false);
             }
-            writeToDatabase(false);
         } else if (decision == 3) {
             Store edit = null;
             int i = 1;
+            if (this.getStores().size() == 0) {
+                System.out.println("You have no stores, please add one!");
+            } else {
 
-            for (Store store : this.getStores()) {
-                System.out.printf("%d: %s\n", i, store.getStoreName());
-                i++;
-            }
-
-
-            while (true) {
-                System.out.println("Enter the store index you want to edit: ");
-                String storeNameToDelete = scanner.nextLine();
-                int toEdit = readInt(storeNameToDelete);
-                if (toEdit != -1) {
-                    edit =this.getStores().get(toEdit - 1);
-                    this.getStores().remove(toEdit - 1);
-                    break;
+                for (Store store : this.getStores()) {
+                    System.out.printf("%d: %s\n", i, store.getStoreName());
+                    i++;
                 }
-            }
 
-            while (true) {
-                System.out.printf("What would you like to change about %s\n", edit.getStoreName());
-                System.out.println("1. Store Name");
-                System.out.println("2. Add Products");
-                System.out.println("3. Edit Products");
-                System.out.println("4. Delete Products");
 
-                String option = scanner.nextLine();
-                int toEdit = readInt(option);
-                if (toEdit != -1) {
-                    if (toEdit == 1) { //Store Name
-                        while (true) {
-                            System.out.println("Enter the new name of the Store: ");
-                            String newName = scanner.nextLine();
-                            if (newName == null) {
-                                System.out.println("Please enter a valid String (cannot be empty!)");
-                            } else {
-                                edit.setStoreName(newName);
-                                break;
-                            }
-                        }
-                        this.getStores().add(edit);
-                    } else if (toEdit == 3) { // Edit Products
-                        Product productEdit = null;
-                        int k = 1;
-                        for (Product product : edit.getProducts()) {
-                            System.out.printf("%d: %s\n", k, product.getName());
-                            k++;
-                        }
-                        while (true) {
-                            System.out.println("Enter the product index you want to edit: ");
-                            String productToEdit = scanner.nextLine();
-                            int x = readInt(productToEdit);
-                            if (x != -1) {
-                                productEdit = edit.getProducts().get(x - 1);
-                                edit.getProducts().remove(x - 1);
-                                break;
-                            }
-                        }
-                        boolean exitCondition = true;
-                        do{
-                            System.out.printf("What would you like to edit about %s\n", productEdit.getName());
-                            System.out.print("1. Name\n2. Description\n3. Price\n4. Quantity For Purchase\n");
-                            int productChoice = readInt(scanner.nextLine());
-                            if (productChoice != - 1) {
-                                if (productChoice == 1) {
-                                    while (true) {
-                                        System.out.println("Enter the new name of the Product: ");
-                                        String newName = scanner.nextLine();
-                                        if (newName == null) {
-                                            System.out.println("Please enter a valid String (cannot be empty!)");
-                                        } else {
-                                            productEdit.setName(newName);
-                                            break;
-                                        }
-                                    }
-                                } else if (productChoice == 2) {
-                                    while (true) {
-                                        System.out.println("Enter the new description of the product: ");
-                                        String newName = scanner.nextLine();
-                                        if (newName == null) {
-                                            System.out.println("Please enter a valid String (cannot be empty!)");
-                                        } else {
-                                            productEdit.setDescription(newName);
-                                            break;
-                                        }
-                                    }
-                                } else if (productChoice == 3) {
-                                    while (true) {
-                                        System.out.println("Enter the new price of the Product: ");
-                                        double newPrice = readDouble(scanner.nextLine());
-                                        if (newPrice != -1) {
-                                            if (newPrice < 0) {
-                                                System.out.println("Please enter a valid Price (cannot be less than 0!)");
-                                            } else {
-                                                productEdit.setPrice(newPrice);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                } else if (productChoice == 4) {
-                                    while (true) {
-                                        System.out.println("How much stock is available?");
-                                        int newStock = readInt(scanner.nextLine());
-                                        if (newStock < 0) {
-                                            System.out.println("Please enter a number greater than 0!");
-                                        } else {
-                                            productEdit.setQuantityForPurchase(newStock);
-                                            break;
-                                        }
-                                    }
-
-                                } else {
-                                    System.out.println("Please enter a valid choice!");
-                                    exitCondition = false;
-                                }
-
-                            }
-                        } while (!exitCondition);
-                        edit.getProducts().add(productEdit);
-                        this.getStores().add(edit);
-                    } else if (toEdit == 2) {
-                        System.out.println("How many products do you want to add?");
-                        int items = scanner.nextInt();
-                        scanner.nextLine();
-
-                        for (int j = 0; j < items; j++) {
-                            System.out.println(productName(j));
-                            String name = scanner.nextLine();
-
-                            System.out.println("What is the description?");
-                            String description = scanner.nextLine();
-
-                            System.out.println("How many items in stock?");
-                            int stock = scanner.nextInt();
-
-                            System.out.println("How much does this item cost?");
-                            double price = scanner.nextDouble();
-                            scanner.nextLine();
-
-                            int uniqueID = getProductDatabase().size() + 1;
-
-                            Product product = new Product(name, description, stock, price, 0, uniqueID );
-                            edit.getProducts().add(product);
-                        }
-                        this.getStores().add(edit);
-                    } else if (toEdit == 4){
-                        Product productDelete = null;
-                        int k = 1;
-                        for (Product product : edit.getProducts()) {
-                            System.out.printf("%d: %s\n", k, product.getName());
-                            k++;
-                        }
-                        while (true) {
-                            System.out.println("Enter the product index you want to delete: ");
-                            String productToDelete = scanner.nextLine();
-                            int x = readInt(productToDelete);
-                            if (x != -1) {
-                                edit.getProducts().remove(x - 1);
-                                break;
-                            }
-                        }
-                        this.getStores().add(edit);
+                while (true) {
+                    System.out.println("Enter the store index you want to edit: ");
+                    String storeNameToDelete = scanner.nextLine();
+                    int toEdit = readInt(storeNameToDelete);
+                    if (toEdit != -1) {
+                        edit = this.getStores().get(toEdit - 1);
+                        this.getStores().remove(toEdit - 1);
+                        break;
                     }
                 }
 
-                break;
+                while (true) {
+                    System.out.printf("What would you like to change about %s\n", edit.getStoreName());
+                    System.out.println("1. Store Name");
+                    System.out.println("2. Add Products");
+                    System.out.println("3. Edit Products");
+                    System.out.println("4. Delete Products");
+
+                    String option = scanner.nextLine();
+                    int toEdit = readInt(option);
+                    if (toEdit != -1) {
+                        if (toEdit == 1) { //Store Name
+                            while (true) {
+                                System.out.println("Enter the new name of the Store: ");
+                                String newName = scanner.nextLine();
+                                if (newName == null) {
+                                    System.out.println("Please enter a valid String (cannot be empty!)");
+                                } else {
+                                    edit.setStoreName(newName);
+                                    break;
+                                }
+                            }
+                            this.getStores().add(edit);
+                        } else if (toEdit == 3) { // Edit Products
+                            Product productEdit = null;
+                            int k = 1;
+                            for (Product product : edit.getProducts()) {
+                                System.out.printf("%d: %s\n", k, product.getName());
+                                k++;
+                            }
+                            while (true) {
+                                System.out.println("Enter the product index you want to edit: ");
+                                String productToEdit = scanner.nextLine();
+                                int x = readInt(productToEdit);
+                                if (x != -1) {
+                                    productEdit = edit.getProducts().get(x - 1);
+                                    edit.getProducts().remove(x - 1);
+                                    break;
+                                }
+                            }
+                            boolean exitCondition = true;
+                            do {
+                                System.out.printf("What would you like to edit about %s\n", productEdit.getName());
+                                System.out.print("1. Name\n2. Description\n3. Price\n4. Quantity For Purchase\n");
+                                int productChoice = readInt(scanner.nextLine());
+                                if (productChoice != -1) {
+                                    if (productChoice == 1) {
+                                        while (true) {
+                                            System.out.println("Enter the new name of the Product: ");
+                                            String newName = scanner.nextLine();
+                                            if (newName == null) {
+                                                System.out.println("Please enter a valid String (cannot be empty!)");
+                                            } else {
+                                                productEdit.setName(newName);
+                                                break;
+                                            }
+                                        }
+                                    } else if (productChoice == 2) {
+                                        while (true) {
+                                            System.out.println("Enter the new description of the product: ");
+                                            String newName = scanner.nextLine();
+                                            if (newName == null) {
+                                                System.out.println("Please enter a valid String (cannot be empty!)");
+                                            } else {
+                                                productEdit.setDescription(newName);
+                                                break;
+                                            }
+                                        }
+                                    } else if (productChoice == 3) {
+                                        while (true) {
+                                            System.out.println("Enter the new price of the Product: ");
+                                            double newPrice = readDouble(scanner.nextLine());
+                                            if (newPrice != -1) {
+                                                if (newPrice < 0) {
+                                                    System.out.println("Please enter a valid Price (cannot be less than 0!)");
+                                                } else {
+                                                    productEdit.setPrice(newPrice);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    } else if (productChoice == 4) {
+                                        while (true) {
+                                            System.out.println("How much stock is available?");
+                                            int newStock = readInt(scanner.nextLine());
+                                            if (newStock < 0) {
+                                                System.out.println("Please enter a number greater than 0!");
+                                            } else {
+                                                productEdit.setQuantityForPurchase(newStock);
+                                                break;
+                                            }
+                                        }
+
+                                    } else {
+                                        System.out.println("Please enter a valid choice!");
+                                        exitCondition = false;
+                                    }
+
+                                }
+                            } while (!exitCondition);
+                            edit.getProducts().add(productEdit);
+                            this.getStores().add(edit);
+                        } else if (toEdit == 2) {
+                            System.out.println("How many products do you want to add?");
+                            int items = scanner.nextInt();
+                            scanner.nextLine();
+
+                            for (int j = 0; j < items; j++) {
+                                System.out.println(productName(j));
+                                String name = scanner.nextLine();
+
+                                System.out.println("What is the description?");
+                                String description = scanner.nextLine();
+
+                                System.out.println("How many items in stock?");
+                                int stock = scanner.nextInt();
+
+                                System.out.println("How much does this item cost?");
+                                double price = scanner.nextDouble();
+                                scanner.nextLine();
+
+                                int uniqueID = getProductDatabase().size() + 1;
+
+                                Product product = new Product(name, description, stock, price, 0, uniqueID);
+                                edit.getProducts().add(product);
+                            }
+                            this.getStores().add(edit);
+                        } else if (toEdit == 4) {
+                            Product productDelete = null;
+                            int k = 1;
+                            for (Product product : edit.getProducts()) {
+                                System.out.printf("%d: %s\n", k, product.getName());
+                                k++;
+                            }
+                            while (true) {
+                                System.out.println("Enter the product index you want to delete: ");
+                                String productToDelete = scanner.nextLine();
+                                int x = readInt(productToDelete);
+                                if (x != -1) {
+                                    edit.getProducts().remove(x - 1);
+                                    break;
+                                }
+                            }
+                            this.getStores().add(edit);
+                        }
+                    }
+
+                    break;
+                }
+                writeToDatabase(false);
+
             }
-            writeToDatabase(false);
         } else if (decision == 4) {
             getSellerStatistics(scanner);
         }
+        writeToDatabase(false);
     }
 
     public String productName(int items) {

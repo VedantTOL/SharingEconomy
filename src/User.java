@@ -252,7 +252,7 @@ public class User {
     public String toString() {
         return String.format("ID = <%d>\nEmail = <%s>\nPassword = <****>\nName = <%s>\nAge <%d>", this.getUniqueIdentifier(), this.getEmail(), this.getPassword(), this.getName(), this.getAge());
     }
-    public User login(Scanner scanner, boolean seller) throws AccountTypeError, NoAccountError {
+    public User login(Scanner scanner, boolean seller) throws AccountTypeError, NoAccountError, IllegalAccessError {
         ArrayList<User> database = readUserDatabase("./src/UserDatabase.txt");
         System.out.println("Email: ");
         String emailCheck = scanner.nextLine();
