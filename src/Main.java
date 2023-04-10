@@ -16,7 +16,7 @@ public class Main {
 
         do {
             System.out.println("Are you a Customer or Seller?");
-            System.out.printf("1. Customer\n2. Seller\n3. Exit\n");
+            System.out.print("1. Customer\n2. Seller\n3. Exit\n");
             String userChoice = scanner.nextLine();
             int x = readInt(userChoice); //checks if integer, returns -1 when not an integer.
             if (x == 1) {
@@ -31,7 +31,7 @@ public class Main {
             }
 
             do {
-                System.out.printf("Create new account or login?\n1. Create an account\n2. Login\n3. Exit\n");
+                System.out.print("Create new account or login?\n1. Create an account\n2. Login\n3. Exit\n");
                 String choice = scanner.nextLine();
                 int option = readInt(choice);
                 if (option == 1) {
@@ -46,7 +46,7 @@ public class Main {
                         if (user == null) {
                             do  {
                                 System.out.println("Would you like to create a new account?");
-                                System.out.printf("1. Yes\n2. No\n3. Exit\n");
+                                System.out.print("1. Yes\n2. No\n3. Exit\n");
                                 String choiceX = scanner.nextLine();
                                 int optionX = readInt(choiceX);
                                 if (optionX == 1) {

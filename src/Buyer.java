@@ -1,8 +1,6 @@
+import java.awt.image.AreaAveragingScaleFilter;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Scanner;
+import java.util.*;
 import java.util.zip.DataFormatException;
 
 public class Buyer extends User {
@@ -170,6 +168,111 @@ public class Buyer extends User {
             } while(search != 1 && search != 2 && search != 3);
         }
         return null;
+    }
+
+    public void getBuyerStatistics(Scanner scanner) {
+        ArrayList<Seller> sellerDatabase = readSellerDatabase();
+
+        //boolean exitCondition = true;
+        int decision = 0;
+        int[] options = {1, 2};
+        do {
+            System.out.println("What statistics would you like to view?");
+            System.out.println("1. All stores");
+            System.out.println("2. Your stores");
+            decision = readInt(scanner.nextLine());
+            if (List.of(options).contains(decision)){
+                break;
+            } else {
+                System.out.println("Please enter a valid menu option!");
+            }
+        } while(true);
+
+        ArrayList<Store> allStores = new ArrayList<Store>();
+        for (Seller seller: sellerDatabase) {
+            for (Store store: seller.getStores()) {
+                allStores.add(store);
+            }
+        }
+
+        if (decision == 1) {
+
+            int decision2 = 0;
+            int[] options2 = {1, 2, 3};
+            while (true) {
+                System.out.println("How would you like to sort?");
+                System.out.println("1. Quantity Sold");
+                System.out.println("2. Total Revenue");
+                System.out.println("3. Stock Remaining");
+
+                decision2 = readInt(scanner.nextLine());
+                if (List.of(options2).contains(decision2)) {
+                    break;
+                } else {
+                    System.out.println("Please enter a valid menu option!");
+                }
+            }
+            if (decision2 == 1) {
+                Collections.sort(allStores, Comparator.comparingInt(Store::getTotalQuantitySold));
+            } else if (decision2 == 2) {
+                Collections.sort(allStores, Comparator.comparingDouble(Store::getTotalValueSold));
+            } else if (decision2 ==3 ) {
+                Collections.sort(allStores, Comparator.comparingInt(Store::getStockRemaining));
+            }
+            int j = 1;
+            for (Store store : allStores) {
+                System.out.printf("%d. %s\n", j, store.getStoreName());
+                System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                j++;
+            }
+        } else if (decision == 2) {
+            int decision2 = 0;
+            int[] options2 = {1, 2, 3};
+            while (true) {
+                System.out.println("How would you like to sort?");
+                System.out.println("1. Quantity Sold");
+                System.out.println("2. Total Revenue");
+                System.out.println("3. Stock Remaining");
+
+                decision2 = readInt(scanner.nextLine());
+                if (List.of(options2).contains(decision2)) {
+                    break;
+                } else {
+                    System.out.println("Please enter a valid menu option!");
+                }
+            }
+
+            ArrayList<Store> yourStores = new ArrayList<Store>();
+
+            for (Product product: this.getPurchases()) {
+                for (Store store: allStores) {
+                    if (store.getProducts().contains(product)) {
+                        yourStores.add(store);
+                        break;
+                    }
+                }
+            }
+            if (decision2 == 1) {
+                Collections.sort(yourStores, Comparator.comparingInt(Store::getTotalQuantitySold));
+            } else if (decision2 == 2) {
+                Collections.sort(yourStores, Comparator.comparingDouble(Store::getTotalValueSold));
+            } else if (decision2 ==3 ) {
+                Collections.sort(yourStores, Comparator.comparingInt(Store::getStockRemaining));
+            }
+            int j = 1;
+            for (Store store : yourStores) {
+                System.out.printf("%d. %s\n", j, store.getStoreName());
+                System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                j++;
+            }
+
+        }
+
+
     }
 
     public void writeToBuyer() throws DataFormatException, IOException {
@@ -378,6 +481,16 @@ public class Buyer extends User {
 
         return database;
 
+    }
+    public static int readInt(String input) {
+        int result;
+        try {
+            result = Integer.parseInt(input);
+            return result;
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter a valid Integer!");
+            return -1;
+        }
     }
 /*
     public ArrayList<Product> viewCart() {

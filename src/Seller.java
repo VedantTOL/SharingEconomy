@@ -186,7 +186,7 @@ public class Seller extends User {
                         boolean exitCondition = true;
                         do{
                             System.out.printf("What would you like to edit about %s\n", productEdit.getName());
-                            System.out.printf("1. Name\n2. Description\n3. Price\n4. Quantity For Purchase\n");
+                            System.out.print("1. Name\n2. Description\n3. Price\n4. Quantity For Purchase\n");
                             int productChoice = readInt(scanner.nextLine());
                             if (productChoice != - 1) {
                                 if (productChoice == 1) {
@@ -299,7 +299,7 @@ public class Seller extends User {
     }
 
     public String productName(int items) {
-        String out = String.format("Enter the ");
+        String out = "Enter the ";
         String suffix = null;
 
         int num = items + 1;
@@ -388,11 +388,8 @@ public class Seller extends User {
         ArrayList<Buyer> buyerDatabase = readBuyerDatabase();
         ArrayList<Product> productDatabase = getProductDatabase();
 
-
-
         //list of customers with items purchase, list of products with sales
         ArrayList<Product> sellerProducts = new ArrayList<Product>();
-
         for (Store store: this.getStores()) {
             for (Product product: store.getProducts()) {
                 sellerProducts.add(product);
@@ -439,7 +436,7 @@ public class Seller extends User {
                     ArrayList<Store> storeStat = this.getStores();
                     do {
                         System.out.println("How would you like to sort?");
-                        System.out.printf("1. Quantity Sold\n2. Total Revenue\n3. Stock Remaining\n");
+                        System.out.print("1. Quantity Sold\n2. Total Revenue\n3. Stock Remaining\n");
                         int decision = readInt(scanner.nextLine());
                         if (decision != -1) {
                             if (decision == 1) {
@@ -488,7 +485,7 @@ public class Seller extends User {
                     do {
                         exitCondition = true;
                         System.out.println("How would you like to sort?");
-                        System.out.printf("1. Quantity Sold\n2. Total Revenue\n3. Stock Remaining\n");
+                        System.out.print("1. Quantity Sold\n2. Total Revenue\n3. Stock Remaining\n");
                         int decision = readInt(scanner.nextLine());
                         if (decision != -1) {
                             if (decision == 1) {

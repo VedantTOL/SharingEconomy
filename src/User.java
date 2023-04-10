@@ -291,7 +291,7 @@ public class User {
 
     public User changeAccount(Scanner scanner) {
         System.out.println("Here are your details: ");
-        System.out.println(this.toString());
+        System.out.println(this);
         while (true) {
             System.out.println("What would you like to change?");
             System.out.println("1. Email\n 2. Password\n 3.Name\n 4.Age");
