@@ -344,6 +344,20 @@ public class User {
             }
                 break;
             }
+        ArrayList<User> database = readUserDatabase("./src/UserDatabase.txt");
+        database.remove(this.uniqueIdentifier - 1);
+        database.add(this);
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(new File("./src/UserDatabase.txt")));
+            for (User k : database) {
+                bw.write(k.constructorString());
+                bw.write("\n");
+            }
+            bw.close();
+        } catch (IOException e) {
+            System.out.println("An error occurred please try again!");
+            return null;
+        }
         return this;
     }
 
@@ -459,9 +473,12 @@ public class User {
                     line = line.substring(2);
                     String[] cartList = line.split(", ");
                     for (String productID: cartList) {
-                        int tempID = Integer.parseInt(productID.split(":")[0]);
-                        int tempQuantity = Integer.parseInt(productID.split(":")[1]);
-                        buyer.getShoppingCart().add(new ProductPurchase(tempID, tempQuantity));
+                        try {
+                            int tempID = Integer.parseInt(productID.split(":")[0]);
+                            int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                            buyer.getShoppingCart().add(new ProductPurchase(tempID, tempQuantity));
+                        } catch (NumberFormatException e) {
+                        }
                         /*
                         for (Product product: productDatabase) {
                             if (tempID == product.getUniqueID()){

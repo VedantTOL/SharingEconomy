@@ -363,7 +363,7 @@ public class Seller extends User {
             }
         }
 
-        if ( this.getUniqueIdentifier() == -1) {
+        if (this.getUniqueIdentifier() == -1) {
             return;
         }
 
