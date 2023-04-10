@@ -1,0 +1,16 @@
+0, john@purdue, 1234, john, 25, 0
+1, braun43@purdue.edu, jbob40, Roger, 22, 1
+2, shah672@purdue.edu, shah1122, Somansh, 22, 2
+3, braun43@purdue.edu, jbob40, Roger, 22, 3
+4, shah672@purdue.edu, shah1122, Somansh, 22, 4
+5, braun43@purdue.edu, jbob40, Roger, 22, 5
+6, shah672@purdue.edu, shah1122, Somansh, 22, 6
+7, braun43@purdue.edu, jbob40, Roger, 22, 7
+8, shah672@purdue.edu, shah1122, Somansh, 22, 8
+9, braun43@purdue.edu, jbob40, Roger, 22, 9
+10, braun43@purdue.edu, jbob40, Roger, 22, 10
+11, braun43@purdue.edu, jbob40, Roger, 22, 11
+12, braun43@purdue.edu, jbob40, Roger, 22, 12
+13, braun43@purdue.edu, jbob40, Roger, 22, 13
+14, shah672@purdue.edu, shah1122, Somansh, 22, 14
+15, braun43@purdue.edu, jbob40, Roger, 22, 15

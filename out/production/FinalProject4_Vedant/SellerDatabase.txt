@@ -1,0 +1,32 @@
+* 0
++ BMW
+1, corve, dofk, 24, 200.00, 0
+1, corve, dofk, 24, 200.00, 0
+1, corve, dofk, 24, 200.00, 0
+1, corve, dofk, 24, 200.00, 0
+1, corve, dofk, 24, 200.00, 0
+1, corve, dofk, 24, 200.00, 0
++ second
+5, brek, yello, 24, 14.00, 0
+5, dofkdofk, doo, 20, 34.00, 0
+5, brek, yello, 24, 14.00, 0
+5, dofkdofk, doo, 20, 34.00, 0
+5, brek, yello, 24, 14.00, 0
+5, dofkdofk, doo, 20, 34.00, 0
+5, brek, yello, 24, 14.00, 0
+5, dofkdofk, doo, 20, 34.00, 0
+5, brek, yello, 24, 14.00, 0
+5, dofkdofk, doo, 20, 34.00, 0
+5, brek, yello, 24, 14.00, 0
+5, dofkdofk, doo, 20, 34.00, 0
++ BMW
++ second
++ BMW
++ second
++ BMW
++ second
++ BMW
++ second
++ BMW
++ second
+* 15
