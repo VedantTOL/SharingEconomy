@@ -195,7 +195,7 @@ public class User {
             uniqueId = 0;
         }
 
-        int sellerIndex = -1;
+        int sellerIndex;
         if (!seller) {
             sellerIndex = -1;
         } else {
@@ -222,6 +222,7 @@ public class User {
                 bw.write("\n");
             }
             bw.close();
+
             if (seller) {
                 bw = new BufferedWriter(new FileWriter("./src/SellerDatabase.txt", true));
                 bw.write(String.format("* %d\n", sellerIndex));
@@ -251,12 +252,13 @@ public class User {
     public String toString() {
         return String.format("ID = <%d>\nEmail = <%s>\nPassword = <****>\nName = <%s>\nAge <%d>", this.getUniqueIdentifier(), this.getEmail(), this.getPassword(), this.getName(), this.getAge());
     }
-    public User login(Scanner scanner, boolean seller) {
+    public User login(Scanner scanner, boolean seller) throws AccountTypeError, NoAccountError {
         ArrayList<User> database = readUserDatabase("./src/UserDatabase.txt");
         System.out.println("Email: ");
         String emailCheck = scanner.nextLine();
         System.out.println("Password: ");
         String passwordCheck = scanner.nextLine();
+
 
         for (User user: database) {
             if (user.getEmail().equals(emailCheck)) {
@@ -266,27 +268,22 @@ public class User {
                             System.out.println("Login Successful!");
                             return user;
                         } else {
-                            System.out.println("Wrong Account Type!");
-                            return null;
+                            throw new AccountTypeError("Wrong Account Type!");
                         }
-
                     } else {
-                        if (user.getSellerIndex() == 0) {
+                        if (user.getSellerIndex() == -1) {
                             System.out.println("Login Successful!");
                             return user;
                         } else {
-                            System.out.println("Wrong Account Type!");
-                            return null;
+                            throw new AccountTypeError("Wrong Account Type!");
                         }
                     }
                 } else {
-                        System.out.println("Incorrect Password!");
-                        return null;
+                        throw new IllegalAccessError("IncorrectPassword");
                 }
             }
         }
-        System.out.println("Email does not exist in records!");
-        return null;
+        throw new NoAccountError("Email does not exist in records");
     }
 
     public User changeAccount(Scanner scanner) {

@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.zip.DataFormatException;
@@ -14,64 +15,95 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
 
-        do {
+        int decisionA = 0;
+        int[] optionsA = {1,2,3};
+        while (true) {
             System.out.println("Are you a Customer or Seller?");
             System.out.print("1. Customer\n2. Seller\n3. Exit\n");
-            String userChoice = scanner.nextLine();
-            int x = readInt(userChoice); //checks if integer, returns -1 when not an integer.
-            if (x == 1) {
-                isSeller = false;
-            } else if (x == 2) {
-                isSeller = true;
-            } else if (x == 3) {
-                System.out.println(EXIT);
-                return;
-            } else {
-                System.out.println(INVALID_OPTION);
-            }
+            decisionA = readInt(scanner.nextLine());
+            if (Arrays.asList(optionsA).contains(decisionA)) break;
+            else System.out.println(INVALID_OPTION);
+        }
 
-            do {
-                System.out.print("Create new account or login?\n1. Create an account\n2. Login\n3. Exit\n");
-                String choice = scanner.nextLine();
-                int option = readInt(choice);
-                if (option == 1) {
-                    //create new account
-                    user = loginAccess.addUser(scanner, isSeller);
-                    break;
-                } else if (option == 2) {
-                    boolean exitCondition;
-                    do {
-                        exitCondition = true;
-                        user = loginAccess.login(scanner, isSeller);
-                        if (user == null) {
-                            do  {
-                                System.out.println("Would you like to create a new account?");
-                                System.out.print("1. Yes\n2. No\n3. Exit\n");
-                                String choiceX = scanner.nextLine();
-                                int optionX = readInt(choiceX);
-                                if (optionX == 1) {
-                                    user = loginAccess.addUser(scanner, isSeller);
-                                    break;
-                                } else if (optionX == 2) {
-                                    System.out.println("You will now be redirected to the Main Menu. Select the correct account type!");
-                                    exitCondition = false;
-                                    break;
-                                } else if (optionX == 3) {
-                                    System.out.println(EXIT);
-                                    return;
-                                } else {
-                                    System.out.println(INVALID_OPTION);
-                                }
-                            } while (exitCondition);
-                        }
-                    } while (user == null && !exitCondition);
+        if(decisionA == 1) isSeller = true;
+        else if(decisionA == 2) isSeller = false;
+        else if(decisionA == 3) {
+            System.out.println(EXIT);
+            return;
+        }
 
-                } else if (option == 3 ) {
-                    System.out.println(EXIT);
+        decisionA = 0;
+
+        while (true) {
+            System.out.print("Create new account or login?\n1. Create an account\n2. Login\n3. Exit\n");
+            decisionA = readInt(scanner.nextLine());
+            if (Arrays.asList(optionsA).contains(decisionA)) break;
+            else System.out.println(INVALID_OPTION);
+        }
+        if (decisionA == 1) {
+            user = loginAccess.addUser(scanner, isSeller);
+        } else if (decisionA == 2) {
+            try {
+                user = loginAccess.login(scanner, isSeller);
+            } catch (NoAccountError e) {
+                e.printStackTrace();
+                int decisionB = 0;
+                int[] optionsB = {1,2};
+                while (true) {
+                    System.out.println("Would you like to create an account?");
+                    System.out.println("1. Yes");
+                    System.out.println("2. Exit");
+
+                    decisionB = readInt(scanner.nextLine());
+                    if (Arrays.asList(optionsB).contains(decisionB)) break;
+                    else System.out.println(INVALID_OPTION);
                 }
-            } while (user == null);
-        } while (user == null);
+                if (decisionB == 1) {
+                    user = loginAccess.addUser(scanner, isSeller);
+                } else if (decisionB == 2) {
+                    System.out.println(EXIT);
+                    return;
+                }
 
+            } catch (AccountTypeError e) {
+                String alternate;
+                if (isSeller) {
+                    alternate = "Customer";
+                    isSeller = false;
+                } else {
+                    alternate = "Seller";
+                    isSeller = true;
+                }
+                System.out.printf("Attempting to log you in as %s...\n", alternate);
+
+                try {
+                    user = loginAccess.login(scanner, isSeller);
+                } catch (Exception k) {
+                    System.out.println("Account does not exist!");
+                    int decisionB = 0;
+                    int[] optionsB = {1,2};
+                    while (true) {
+                        System.out.println("Would you like to create an account?");
+                        System.out.println("1. Yes");
+                        System.out.println("2. Exit");
+
+                        decisionB = readInt(scanner.nextLine());
+                        if (Arrays.asList(optionsB).contains(decisionB)) break;
+                        else System.out.println(INVALID_OPTION);
+                    }
+                    if (decisionB == 1) {
+                        user = loginAccess.addUser(scanner, isSeller);
+                    } else if (decisionB == 2) {
+                        System.out.println(EXIT);
+                        return;
+                    }
+                }
+
+            }
+        } else if (decisionA == 3) {
+            System.out.println(EXIT);
+            return;
+        }
 
 
         if (!isSeller) {
