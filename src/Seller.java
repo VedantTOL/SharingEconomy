@@ -29,7 +29,7 @@ public class Seller extends User {
         } else {
             return 0;
         }
-}
+    }
 
     public void addStore(Store store) {
         stores.add(store);
@@ -58,12 +58,15 @@ public class Seller extends User {
                     "1. Add store\n" +
                     "2. Delete" +
                     " store\n" +
-                    "3. Edit store");
-            System.out.println("4. View Statistics");
+                    "3. Edit store\n" +
+                    "4. View statistics\n" +
+                    "5. Edit account\n" +
+                    "6. Delete account");
             try {
                 decision = scanner.nextInt();
                 scanner.nextLine();
-                if (decision != 1 && decision != 2 && decision != 3 && decision != 4) {
+                if (decision != 1 && decision != 2 && decision != 3 && decision != 4 && decision != 5
+                        && decision != 6) {
                     System.out.println("Please enter a valid option!");
                 } else {
                     break;
@@ -98,7 +101,7 @@ public class Seller extends User {
 
                 int uniqueID = getProductDatabase().size() + 1 + i;
 
-                Product product = new Product(name, description, stock, price, 0, uniqueID );
+                Product product = new Product(name, description, stock, price, 0, uniqueID);
                 products.add(product);
 
             }
@@ -308,6 +311,10 @@ public class Seller extends User {
             }
         } else if (decision == 4) {
             getSellerStatistics(scanner);
+        } else if (decision == 5) {
+            this.changeAccount(scanner);
+        } else if (decision == 6) {
+            this.deleteAccount(scanner);
         }
         writeToDatabase(false);
     }
@@ -363,7 +370,7 @@ public class Seller extends User {
             }
         }
 
-        if (this.getUniqueIdentifier() == -1) {
+        if ( this.getUniqueIdentifier() == -1) {
             return;
         }
 
@@ -583,5 +590,4 @@ public class Seller extends User {
         }
     }
 }
-
 
