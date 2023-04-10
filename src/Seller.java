@@ -130,11 +130,12 @@ public class Seller extends User {
                 }
                 writeToDatabase(false);
             }
-        } else if (decision == 3) {
+        } else if (decision == 3) { //edit
             Store edit = null;
             int i = 1;
             if (this.getStores().size() == 0) {
                 System.out.println("You have no stores, please add one!");
+
             } else {
 
                 for (Store store : this.getStores()) {
@@ -362,6 +363,10 @@ public class Seller extends User {
             }
         }
 
+        if ( this.getUniqueIdentifier() == -1) {
+            return;
+        }
+
 
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter("./src/SellerDatabase.txt"));
@@ -425,10 +430,14 @@ public class Seller extends User {
                 if (choice == 1) {
                     int itemsPurchased;
                     double totalSpent;
+                    int itemsInCart;
+                    double potentialSpending;
                     ArrayList<Buyer> customers = new ArrayList<Buyer>();
                     for (Buyer buyer: buyerDatabase) {
                         itemsPurchased = 0;
                         totalSpent = 0;
+                        itemsInCart = 0;
+                        potentialSpending = 0;
                         for (ProductPurchase purchase: buyer.getPurchases()) {
                             for (Product product: sellerProducts) {
                                 if (product.getUniqueID() == purchase.getUniqueID()) {
@@ -439,9 +448,20 @@ public class Seller extends User {
                                 }
                             }
                         }
+                        for (ProductPurchase purchase: buyer.getShoppingCart()) {
+                            for (Product product: sellerProducts) {
+                                if (product.getUniqueID() == purchase.getUniqueID()) {
+                                    customers.add(buyer);
+                                    itemsInCart += purchase.getOrderQuantity();
+                                    potentialSpending += purchase.getOrderQuantity() * purchase.getPrice();
+                                    break;
+                                }
+                            }
+                        }
                         if (customers.contains(buyer)) {
                             System.out.printf("Customer Name: %s\n\tItems Purchased: %d\n\tTotal Value (with current prices): %.2f\n",
                                     buyer.getName(), itemsPurchased, totalSpent);
+                            System.out.printf("\tItems In Cart: %d\n\tPotential Revenue: %.2f\n", itemsInCart, potentialSpending);
                         }
                     }
 

@@ -11,9 +11,6 @@
 + plp
 2, adfokk, adofkk, 0, 32.00, 0
 3, asodkao, 34, 0, 17.40, 0
-* -1
 + NEWWW
 8, brome, dfji, 12, 23.00, 0
 9, nooo, dfod, 12, 23.00, 0
-* 3
-* -1
