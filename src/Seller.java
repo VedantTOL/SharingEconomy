@@ -44,7 +44,7 @@ public class Seller extends User {
             return 0;
         }
     }
-    @Override
+
     public ArrayList<Buyer> readBuyerDatabase() throws DataFormatException, IOException {
         ArrayList<Buyer> database = new ArrayList<Buyer>();
         ArrayList<Product> productDatabase = getProductDatabase();
@@ -72,32 +72,37 @@ public class Seller extends User {
                         return null;
                     }
                 } else if (identifier == '+') {
-                    line = line.substring(2);
-                    String[] cartList = line.split(", ");
-                    for (String productID: cartList) {
-                        try {
-                            int tempID = Integer.parseInt(productID.split(":")[0]);
-                            int tempQuantity = Integer.parseInt(productID.split(":")[1]);
-                            buyer.getShoppingCart().add(new ProductPurchase(tempID, tempQuantity));
-                        } catch (NumberFormatException e) {
-                        }
-                        /*
-                        for (Product product: productDatabase) {
-                            if (tempID == product.getUniqueID()){
-                                buyer.shoppingCart.add(new ProductPurchase(product.getUniqueID(), tempQuantity));
+                    try {
+                        line = line.substring(2);
+                    } catch (StringIndexOutOfBoundsException e) {
+                        buyer.setShoppingCart(new ArrayList<ProductPurchase>());
+                    }
+                    if (line != "") {
+                        String[] cartList = line.split(", ");
+                        for (String productID : cartList) {
+                            try {
+                                int tempID = Integer.parseInt(productID.split(":")[0]);
+                                int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                                buyer.getShoppingCart().add(new ProductPurchase(tempID, tempQuantity));
+                            } catch (NumberFormatException e) {
                             }
                         }
-                        */
-
+                    } else {
+                        buyer.setShoppingCart(new ArrayList<ProductPurchase>());
                     }
 
                 } else if (identifier == '-') {
-                    line = line.substring(2);
-                    String[] purchasedList = line.split(", ");
-                    for (String productID: purchasedList) {
-                        int tempID = Integer.parseInt(productID.split(":")[0]);
-                        int tempQuantity = Integer.parseInt(productID.split(":")[1]);
-                        buyer.addPurchase(new ProductPurchase(tempID, tempQuantity));
+                    try {
+                        line = line.substring(2);
+                    } catch (StringIndexOutOfBoundsException e) {
+                        buyer.setPurchases(new ArrayList<ProductPurchase>());
+                    }
+                    if (line != "") {
+                        String[] purchasedList = line.split(", ");
+                        for (String productID : purchasedList) {
+                            int tempID = Integer.parseInt(productID.split(":")[0]);
+                            int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                            buyer.addPurchase(new ProductPurchase(tempID, tempQuantity));
 
                         /*
                         for (Product product: productDatabase) {
@@ -106,6 +111,9 @@ public class Seller extends User {
                         }
 
                          */
+                        }
+                    } else {
+                        buyer.setPurchases(new ArrayList<ProductPurchase>());
                     }
                 }
 

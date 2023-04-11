@@ -526,6 +526,7 @@ public class User {
         }
         return productDatabase;
     }
+    /*
     public ArrayList<Buyer> readBuyerDatabase() throws DataFormatException, IOException {
         ArrayList<Buyer> database = new ArrayList<Buyer>();
         ArrayList<Product> productDatabase = getProductDatabase();
@@ -550,7 +551,7 @@ public class User {
                     } catch (NoAccountError e) {
                         return null;
                     }
-                } else if (identifier == '+') {
+                } else if (identifier == '-') {
                     line = line.substring(2);
                     String[] cartList = line.split(", ");
                     for (String productID: cartList) {
@@ -566,11 +567,11 @@ public class User {
                                 buyer.shoppingCart.add(new ProductPurchase(product.getUniqueID(), tempQuantity));
                             }
                         }
-                        */
+
 
                     }
 
-                } else if (identifier == '-') {
+                } else if (identifier == '+') {
                     line = line.substring(2);
 
                     String[] purchasedList = line.split(", ");
@@ -586,7 +587,7 @@ public class User {
 
                         }
 
-                         */
+
                     }
                 }
 
@@ -602,6 +603,8 @@ public class User {
         return database;
 
     }
+
+     */
 
 
 }
