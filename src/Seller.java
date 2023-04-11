@@ -18,65 +18,148 @@ import java.util.*;
 
 public class Seller extends User {
     private ArrayList<Store> stores;
-
-
+    private boolean isSeller(int sellerIndex) {
+        return (sellerIndex != -1);
+    }
     public Seller(int uniqueIdentifier, String email, String password, String name, int age, int sellerIndex, ArrayList<Store> stores) {
         super(uniqueIdentifier, email, password, name, age, sellerIndex);
         this.stores = stores;
     }
-
     public Seller(int uniqueIdentifier) throws NoAccountError {
         super(uniqueIdentifier);
         this.stores = new ArrayList<Store>();
     }
-
     public Seller() {
         this.stores = null;
     }
-
-
     public int getNewIndex(boolean newSeller) {
-        ArrayList<Seller> database = readSellerDatabase();
-        if (newSeller) {
-            return database.size() + 1;
-        } else {
+        try {
+            ArrayList<Seller> database = readSellerDatabase();
+            if (newSeller) {
+                return database.size() + 1;
+            } else {
+                return 0;
+            }
+        } catch (NoSellers e) {
             return 0;
         }
     }
+    @Override
+    public ArrayList<Buyer> readBuyerDatabase() throws DataFormatException, IOException {
+        ArrayList<Buyer> database = new ArrayList<Buyer>();
+        ArrayList<Product> productDatabase = getProductDatabase();
 
-    public void addStore(Store store) {
-        stores.add(store);
+        String line;
+        Buyer buyer = null;
+
+        BufferedReader bfr = null;
+        try {
+            bfr = new BufferedReader(new FileReader("./src/BuyerDatabase.txt"));
+            while (true) {
+                line = bfr.readLine();
+                if (line == null || line == "") {
+                    break;
+                }
+                char identifier = line.charAt(0);
+
+                if (identifier == '*') {
+                    try {
+                        buyer = new Buyer(Integer.parseInt(line.split(" ")[1]));
+                        if (buyer.getSellerIndex() == -1) {
+                            database.add(buyer);
+                        }
+                    } catch (NoAccountError e) {
+                        return null;
+                    }
+                } else if (identifier == '+') {
+                    line = line.substring(2);
+                    String[] cartList = line.split(", ");
+                    for (String productID: cartList) {
+                        try {
+                            int tempID = Integer.parseInt(productID.split(":")[0]);
+                            int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                            buyer.getShoppingCart().add(new ProductPurchase(tempID, tempQuantity));
+                        } catch (NumberFormatException e) {
+                        }
+                        /*
+                        for (Product product: productDatabase) {
+                            if (tempID == product.getUniqueID()){
+                                buyer.shoppingCart.add(new ProductPurchase(product.getUniqueID(), tempQuantity));
+                            }
+                        }
+                        */
+
+                    }
+
+                } else if (identifier == '-') {
+                    line = line.substring(2);
+                    String[] purchasedList = line.split(", ");
+                    for (String productID: purchasedList) {
+                        int tempID = Integer.parseInt(productID.split(":")[0]);
+                        int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                        buyer.addPurchase(new ProductPurchase(tempID, tempQuantity));
+
+                        /*
+                        for (Product product: productDatabase) {
+                            if (tempID == product.getUniqueID()){
+
+                        }
+
+                         */
+                    }
+                }
+
+            }
+
+
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return database;
+
     }
-
+    public void addStore(int storeIndex, Store store) {
+        try {
+            this.stores.add(storeIndex, store);
+        } catch (IndexOutOfBoundsException e) {
+            this.stores.add(store);
+        }
+    }
     public ArrayList<Store> getStores() {
         return stores;
     }
-
     public ArrayList<Product> getStore(int index) {
         return stores.get(index).getProducts();
     }
-
     public void setStores(ArrayList<Store> stores) {
         this.stores = stores;
     }
-
-
-    public void sellerMenu(Scanner scanner) throws DataFormatException, IOException {
+    public void sellerMenu(Scanner scanner, boolean newSeller) throws DataFormatException, IOException {
         int decision;
-        if (readSellerDatabase() == null) {
+        ArrayList<Seller> updateDatabase = null;
+        try {
+             updateDatabase = readSellerDatabase();
+        } catch (NoSellers e) {
+            newSeller = true;
+        }
+
+        if (updateDatabase == null) {
             this.setStores(new ArrayList<Store>());
         } else {
             try {
-                this.setStores(readSellerDatabase().get(getSellerIndex()).getStores());
+                this.setStores(updateDatabase.get(getSellerIndex()).getStores());
             } catch (IndexOutOfBoundsException e) {
                 this.setStores(new ArrayList<Store>());
             }
         }
         boolean quit = false;
-        ArrayList<Seller> updateDatabase = readSellerDatabase();
+
         while (!quit) {
             while (true) {
-                writeToDatabase(true, updateDatabase);
+                //writeToDatabase(true, updateDatabase);
                 System.out.println("What actions would you like to take?\n" +
                         "1. Add store\n" +
                         "2. Delete" +
@@ -108,34 +191,14 @@ public class Seller extends User {
                 int items = scanner.nextInt();
                 scanner.nextLine();
 
-                products = new ArrayList<Product>();
-                for (int i = 0; i < items; i++) {
-                    System.out.println(productName(i));
-                    String name = scanner.nextLine();
-
-                    System.out.println("What is the description?");
-                    String description = scanner.nextLine();
-
-                    System.out.println("How many items in stock?");
-                    int stock = scanner.nextInt();
-                    scanner.nextLine();
-
-                    System.out.println("How much does this item cost?");
-                    double price = scanner.nextDouble();
-                    scanner.nextLine();
-
-                    int uniqueID = getProductDatabase().size() + 1;
-
-                    Product product = new Product(name, description, stock, price, 0, uniqueID);
-                    products.add(product);
-                }
+                products = addProducts(items, scanner);
 
                 Store store = new Store(storeName, products);
-                this.addStore(store);
+                this.addStore(-1, store);
 
-                updateDatabase.set(this.getSellerIndex(), this);
+                updateDatabase.add(this.getSellerIndex(), this);
 
-                writeToDatabase(false, updateDatabase); // idk what this is, is it at the right place?
+                writeToDatabase(false, updateDatabase); //
             } else if (decision == 2) {//Delete Store
                 int i = 1;
 
@@ -163,7 +226,7 @@ public class Seller extends User {
                 }
                 updateDatabase.set(this.getSellerIndex(), this);
                 writeToDatabase(false, updateDatabase);
-            } else if (decision == 3) {
+            } else if (decision == 3) { // Edit Store
                 Store edit = null;
                 int i = 1;
 
@@ -299,26 +362,7 @@ public class Seller extends User {
                             System.out.println("How many products do you want to add?");
                             int items = scanner.nextInt();
                             scanner.nextLine();
-
-                            for (int j = 0; j < items; j++) {
-                                System.out.println(productName(j));
-                                String name = scanner.nextLine();
-
-                                System.out.println("What is the description?");
-                                String description = scanner.nextLine();
-
-                                System.out.println("How many items in stock?");
-                                int stock = scanner.nextInt();
-
-                                System.out.println("How much does this item cost?");
-                                double price = scanner.nextDouble();
-                                scanner.nextLine();
-
-                                int uniqueID = getProductDatabase().size() + 1 + i;
-
-                                Product product = new Product(name, description, stock, price, 0, uniqueID);
-                                edit.getProducts().add(product);
-                            }
+                            edit.setProducts(addProducts(items, scanner));
                             this.getStores().add(edit);
                         } else if (toEdit == 4) {
                             Product productDelete = null;
@@ -643,5 +687,30 @@ public class Seller extends User {
             System.out.println("Please enter a number!");
             return -1;
         }
+    }
+
+    public ArrayList<Product> addProducts(int count, Scanner scanner) {
+        ArrayList<Product> products = new ArrayList<Product>();
+        for (int i = 0; i < count; i++) {
+            System.out.println(productName(i));
+            String name = scanner.nextLine();
+
+            System.out.println("What is the description?");
+            String description = scanner.nextLine();
+
+            System.out.println("How many items in stock?");
+            int stock = scanner.nextInt();
+            scanner.nextLine();
+
+            System.out.println("How much does this item cost?");
+            double price = scanner.nextDouble();
+            scanner.nextLine();
+
+            int uniqueID = getProductDatabase().size() + 1 + i;
+
+            Product product = new Product(name, description, stock, price, 0, uniqueID);
+            products.add(product);
+        }
+        return products;
     }
 }

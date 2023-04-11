@@ -142,6 +142,29 @@ public class User {
         this.age = age;
     }
 
+    public int getSellerCount() {
+        int result = 0;
+        ArrayList<User> userDatabase =readUserDatabase("./src/UserDatabase.txt");
+        for (User user: userDatabase) {
+            if (user.getSellerIndex() != - 1) {
+                result++;
+
+            }
+        }
+        return result;
+    }
+
+    public int getBuyerCount() {
+        int result = 0;
+        ArrayList<User> userDatabase =readUserDatabase("./src/UserDatabase.txt");
+        for (User user: userDatabase) {
+            if (user.getSellerIndex() == 1) {
+                result++;
+            }
+        }
+        return result;
+    }
+
 
     public ArrayList<User> readUserDatabase(String fileName) {
         File f;
@@ -405,30 +428,47 @@ public class User {
         }
     }
 
-    public ArrayList<Seller> readSellerDatabase() {
+    public ArrayList<Seller> readSellerDatabase() throws NoSellers {
+
+        if (getSellerCount() == 0) { //exits when no sellers exist.
+            throw new NoSellers("No Sellers Exist!");
+        }
+
+        //initialize variables;
         BufferedReader bfr = null;
         String line;
         ArrayList<Seller> database = new ArrayList<Seller>();
+
+        //initializing iterating objects to use them outside the scope of try/catch;
         Seller seller;
         Store store;
         Product product;
+
+        //used for indexing arraylists; incremented
         int sellerIndex = -1;
         int storeIndex = -1;
 
         try {
             bfr = new BufferedReader(new FileReader("./src/SellerDatabase.txt"));
-
             while (true) {
                 line = bfr.readLine();
 
-                if (line == null) {
+                if (line == null || line == "") {
                     break;
                 }
-                char identifier = line.charAt(0);
+
+                char identifier = line.charAt(0); //data processing
+
                 if (identifier == 42) {
                     storeIndex = -1;
                     try {
                         seller = new Seller(Integer.parseInt(line.split(" ")[1]));
+                        if (seller.getSellerIndex() != -1) {
+                            database.add(seller);
+                            sellerIndex = seller.getSellerIndex();
+                        }
+
+                        /*
                         boolean add = true;
                         for (Seller duplicate: database) {
                             if (duplicate.getSellerIndex() == sellerIndex);
@@ -442,13 +482,15 @@ public class User {
                             }
                             sellerIndex++;
                         }
+
+                         */
                     } catch (NoAccountError e) {
                         return null;
                     }
                 } else if (identifier == 43) {
                     storeIndex++;
                     store = new Store(line.split(" ")[1]);
-                    database.get(sellerIndex).addStore(store);
+                    database.get(sellerIndex).addStore(storeIndex, store);
                 } else {
                     try {
                         product = new Product(line.split(", "));
@@ -468,7 +510,12 @@ public class User {
 
     }
     public ArrayList<Product> getProductDatabase() {
-        ArrayList<Seller> database= readSellerDatabase();
+        ArrayList<Seller> database = null;
+        try {
+            database = readSellerDatabase();
+        } catch (NoSellers e) {
+            return null;
+        }
         ArrayList<Product> productDatabase = new ArrayList<Product>();
         for (Seller seller: database) {
             for (Store store : seller.getStores()) {
@@ -525,11 +572,11 @@ public class User {
 
                 } else if (identifier == '-') {
                     line = line.substring(2);
-                    System.out.println(line);
+
                     String[] purchasedList = line.split(", ");
                     for (String productID: purchasedList) {
                         int tempID = Integer.parseInt(productID.split(":")[0]);
-                        System.out.println(tempID);
+
                         int tempQuantity = Integer.parseInt(productID.split(":")[1]);
                         buyer.getPurchases().add(new ProductPurchase(tempID, tempQuantity));
 

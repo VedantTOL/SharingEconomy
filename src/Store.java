@@ -71,7 +71,7 @@ public class Store {
     }
 
     public void addProduct(Product product) {
-        products.add(product);
+        this.products.add(product);
     }
 
     // to String method just to see what the store looks like

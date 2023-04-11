@@ -50,8 +50,6 @@ public class Main {
             return;
         }
 
-        decisionA = 0;
-
         while (true) {
             System.out.print("Create new account or login?\n1. Create an account\n2. Login\n3. Exit\n");
             decisionA = readInt(scanner.nextLine());
@@ -59,8 +57,10 @@ public class Main {
             else System.out.println(INVALID_OPTION);
         }
         if (decisionA == 1) {
+
             user = loginAccess.addUser(scanner, isSeller);
             newSeller = true;
+
         } else if (decisionA == 2) {
             do {
                 try {
@@ -162,11 +162,17 @@ public class Main {
             if (buyer.getPurchases() == null) {
                 buyer.setPurchases(new ArrayList<ProductPurchase>());
             }
+            ArrayList<Seller> database = null;
 
             int continueShopping = 0;
             boolean leave = false;
             while (!leave) {
                 do {
+                    try {
+                        database = buyer.readSellerDatabase();
+                    } catch (NoSellers e) {
+                        System.out.println("No Sellers Exist Yet; You will be unable to shop!");
+                    }
                     int shopBy = 0;
                     do {
                         System.out.println("Do you want to view the whole marketplace or shop by Seller?\n1. Marketplace\n2. Seller\n3. Change Account Details\n4. Delete Account");
@@ -184,7 +190,7 @@ public class Main {
                             choice = readInt(choices);
                         } while (choice == -1);
 
-                        ArrayList<Product> productList = buyer.viewMarketPlace(choice, scanner);
+                        ArrayList<Product> productList = buyer.viewMarketPlace(choice, scanner, database);
 
                         if (productList == null) {
                             System.out.println("Sorry! Sellers have not yet posted anything to the marketplace.");
@@ -210,14 +216,14 @@ public class Main {
 
                                 do {
                                     System.out.println("Would you like to buy this product now, add it to your cart, or go back to the " +
-                                            "previous page?\n1. Buy now\n" + "2. Add to cart\n" + "3. Previous page\n");
+                                            "previous page?\n1. Buy now\n" + "2. Add to cart\n" + "3. Previous page");
                                     String choices = scanner.nextLine();
                                     choice = readInt(choices);
-                                } while (choice == -1);
+                                } while (!optionsA.contains(choice));
 
                                 if (choice == 1) {
 
-                                    Store store = buyer.viewStore(product);
+                                    Store store = buyer.viewStore(product, database);
 
                                     int numProductsForPurchase;
                                     do {
@@ -226,10 +232,10 @@ public class Main {
                                         numProductsForPurchase = readInt(numProductsForPurchases);
                                     } while (numProductsForPurchase == -1);
 
-                                    buyer.buyProduct(product, numProductsForPurchase, store, scanner);
+                                    buyer.buyProduct(product, numProductsForPurchase, store, scanner, database);
 
                                 } else if (choice == 2) {
-                                    Store store = buyer.viewStore(product);
+                                    Store store = buyer.viewStore(product, database);
 
                                     int quantity;
                                     do {
@@ -286,7 +292,7 @@ public class Main {
                                         removeFromCart = 1;
 
                                     } else if (purchaseCart == 2) {
-                                        removeFromCart = buyer.purchaseCart();
+                                        removeFromCart = buyer.purchaseCart(database);
                                         //buyer.writeToDatabase(false);
 
                                     }
@@ -338,7 +344,7 @@ public class Main {
                         ArrayList<Product> productList = null;
                         Seller seller = null;
                         do {
-                            seller = buyer.shopBySeller(scanner);
+                            seller = buyer.shopBySeller(scanner, database);
                             if (seller == null) {
                                 System.out.println("There is no seller name that matches this name");
                             } else {
@@ -359,7 +365,7 @@ public class Main {
                             do {
                                 int i = 1;
                                 for (Product product: productList) {
-                                    System.out.printf("%d. %s\n", i+1, product.marketplaceString());
+                                    System.out.printf("%d. %s\n", i, product.marketplaceString());
                                     i++;
                                 }
 
@@ -377,11 +383,11 @@ public class Main {
                                             "previous page?\n1. Buy now\n" + "2. Add to cart\n" + "3. Previous page\n");
                                     String choices = scanner.nextLine();
                                     choice = readInt(choices);
-                                } while (choice == -1);
+                                } while (!optionsA.contains(choice));
 
                                 if (choice == 1) {
 
-                                    Store store = buyer.viewStore(product);
+                                    Store store = buyer.viewStore(product, database);
 
                                     int numProductsForPurchase;
                                     do {
@@ -390,10 +396,10 @@ public class Main {
                                         numProductsForPurchase = readInt(numProductsForPurchases);
                                     } while (numProductsForPurchase == -1);
 
-                                    buyer.buyProduct(product, numProductsForPurchase, store, scanner);
+                                    buyer.buyProduct(product, numProductsForPurchase, store, scanner,database);
 
                                 } else if (choice == 2) {
-                                    Store store = buyer.viewStore(product);
+                                    Store store = buyer.viewStore(product, database);
 
                                     int quantity;
                                     do {
@@ -451,7 +457,7 @@ public class Main {
                                         removeFromCart = 1;
 
                                     } else if (purchaseCart == 2) {
-                                        removeFromCart = buyer.purchaseCart();
+                                        removeFromCart = buyer.purchaseCart(database);
                                         //buyer.writeToDatabase(false);
 
                                     }
@@ -488,11 +494,6 @@ public class Main {
                                     continueShopping = 1;
 
                                 } else if (logOut == 2) {
-                                    try {
-                                        buyer.writeToBuyer();
-                                    } catch (IOException | DataFormatException e) {
-                                        //System.out.println("Something");
-                                    }
                                     leave = true;
                                 }
                             }
@@ -507,13 +508,13 @@ public class Main {
                         leave = true;
                         break;
                     }
-
+                    buyer.writeToBuyer();
                 } while (continueShopping == 1);
             }
         } else {
             try {
                 Seller seller = new Seller(user.getUniqueIdentifier());
-                seller.sellerMenu(scanner);
+                seller.sellerMenu(scanner, newSeller);
             } catch (NoAccountError e) {
                 System.out.println("No Accounts Exist! Logging you out!");
                 return;

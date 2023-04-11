@@ -63,7 +63,7 @@ public class Product {
                 } else if (identifier == 43) {
                     storeIndex++;
                     store = new Store(line.split(" ")[1]);
-                    database.get(sellerIndex).addStore(store);
+                    database.get(sellerIndex).addStore(storeIndex, store);
                 } else {
                     try {
                         product = new Product(line.split(", "));
