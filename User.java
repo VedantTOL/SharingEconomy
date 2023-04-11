@@ -2,6 +2,15 @@ import java.util.Scanner;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.zip.DataFormatException;
+/**
+ * The user class create a user object and allows a buyer or seller to be identifiable with a uniqueID after being
+ * written to the file. The user class and its methods allow users to create an account, login with an existing account,
+ * and edit/delete accounts. This class's functionality is integral to the function of buyer and seller classes.
+ *
+ *
+ * @author Roger, Somansh, Ethan, Vedant
+ * @version June 13, 2022
+ */
 
 public class User {
     private int uniqueIdentifier;
@@ -37,14 +46,20 @@ public class User {
         this.age = age;
         this.sellerIndex = sellerIndex;
     }
-    public User(int uniqueIdentifier) {
+    public User(int uniqueIdentifier) throws NoAccountError {
         this.uniqueIdentifier = uniqueIdentifier;
         ArrayList<User> database = readUserDatabase("./src/UserDatabase.txt");
-        this.email = database.get(uniqueIdentifier).getEmail();
-        this.password = database.get(uniqueIdentifier).getPassword();
-        this.name = database.get(uniqueIdentifier).getName();
-        this.age = database.get(uniqueIdentifier).getAge();
-        this.sellerIndex = database.get(uniqueIdentifier).getSellerIndex();
+        if (database.size() != 0 && uniqueIdentifier != -1) {
+            this.email = database.get(uniqueIdentifier).getEmail();
+            this.password = database.get(uniqueIdentifier).getPassword();
+            this.name = database.get(uniqueIdentifier).getName();
+            this.age = database.get(uniqueIdentifier).getAge();
+            this.sellerIndex = database.get(uniqueIdentifier).getSellerIndex();
+        } else if (database.size() == 0 ){
+            throw new NoAccountError("No Accounts Exist! Logging you out!");
+        } else if (uniqueIdentifier == - 1) {
+            throw new NoAccountError("You deleted account, logging you out!");
+        }
     }
 
 
@@ -125,6 +140,29 @@ public class User {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    public int getSellerCount() {
+        int result = 0;
+        ArrayList<User> userDatabase =readUserDatabase("./src/UserDatabase.txt");
+        for (User user: userDatabase) {
+            if (user.getSellerIndex() != - 1) {
+                result++;
+
+            }
+        }
+        return result;
+    }
+
+    public int getBuyerCount() {
+        int result = 0;
+        ArrayList<User> userDatabase =readUserDatabase("./src/UserDatabase.txt");
+        for (User user: userDatabase) {
+            if (user.getSellerIndex() == 1) {
+                result++;
+            }
+        }
+        return result;
     }
 
 
@@ -390,35 +428,69 @@ public class User {
         }
     }
 
-    public ArrayList<Seller> readSellerDatabase() {
+    public ArrayList<Seller> readSellerDatabase() throws NoSellers {
+
+        if (getSellerCount() == 0) { //exits when no sellers exist.
+            throw new NoSellers("No Sellers Exist!");
+        }
+
+        //initialize variables;
         BufferedReader bfr = null;
         String line;
         ArrayList<Seller> database = new ArrayList<Seller>();
+
+        //initializing iterating objects to use them outside the scope of try/catch;
         Seller seller;
         Store store;
         Product product;
+
+        //used for indexing arraylists; incremented
         int sellerIndex = -1;
         int storeIndex = -1;
 
         try {
             bfr = new BufferedReader(new FileReader("./src/SellerDatabase.txt"));
-
             while (true) {
                 line = bfr.readLine();
 
-                if (line == null) {
+                if (line == null || line == "") {
                     break;
                 }
-                char identifier = line.charAt(0);
+
+                char identifier = line.charAt(0); //data processing
+
                 if (identifier == 42) {
-                    sellerIndex++;
                     storeIndex = -1;
-                    seller = new Seller(Integer.parseInt(line.split(" ")[1]));
-                    database.add(seller);
+                    try {
+                        seller = new Seller(Integer.parseInt(line.split(" ")[1]));
+                        if (seller.getSellerIndex() != -1) {
+                            database.add(seller);
+                            sellerIndex = seller.getSellerIndex();
+                        }
+
+                        /*
+                        boolean add = true;
+                        for (Seller duplicate: database) {
+                            if (duplicate.getSellerIndex() == sellerIndex);
+                            add = false;
+                        }
+                        if (add) {
+                            if (database.size() == 0) {
+                                database.add(seller);
+                            } else {
+                                database.add(seller.getSellerIndex(), seller);
+                            }
+                            sellerIndex++;
+                        }
+
+                         */
+                    } catch (NoAccountError e) {
+                        return null;
+                    }
                 } else if (identifier == 43) {
                     storeIndex++;
                     store = new Store(line.split(" ")[1]);
-                    database.get(sellerIndex).addStore(store);
+                    database.get(sellerIndex).addStore(storeIndex, store);
                 } else {
                     try {
                         product = new Product(line.split(", "));
@@ -438,7 +510,12 @@ public class User {
 
     }
     public ArrayList<Product> getProductDatabase() {
-        ArrayList<Seller> database= readSellerDatabase();
+        ArrayList<Seller> database = null;
+        try {
+            database = readSellerDatabase();
+        } catch (NoSellers e) {
+            return null;
+        }
         ArrayList<Product> productDatabase = new ArrayList<Product>();
         for (Seller seller: database) {
             for (Store store : seller.getStores()) {
@@ -467,8 +544,12 @@ public class User {
                 char identifier = line.charAt(0);
 
                 if (identifier == '*') {
-                    buyer = new Buyer(Integer.parseInt(line.split(" ")[1]));
-                    database.add(buyer);
+                    try {
+                        buyer = new Buyer(Integer.parseInt(line.split(" ")[1]));
+                        database.add(buyer);
+                    } catch (NoAccountError e) {
+                        return null;
+                    }
                 } else if (identifier == '+') {
                     line = line.substring(2);
                     String[] cartList = line.split(", ");
@@ -491,11 +572,11 @@ public class User {
 
                 } else if (identifier == '-') {
                     line = line.substring(2);
-                    System.out.println(line);
+
                     String[] purchasedList = line.split(", ");
                     for (String productID: purchasedList) {
                         int tempID = Integer.parseInt(productID.split(":")[0]);
-                        System.out.println(tempID);
+
                         int tempQuantity = Integer.parseInt(productID.split(":")[1]);
                         buyer.getPurchases().add(new ProductPurchase(tempID, tempQuantity));
 

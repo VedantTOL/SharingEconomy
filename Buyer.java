@@ -1,10 +1,19 @@
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Scanner;
 import java.util.zip.DataFormatException;
+/**
+ * The buyer class that allows the buyer to perform all the necessary actions within the marketplace. Methods within
+ * this class allow the buyer to purchase products, add them to their cart, remove them from their cart, purchase their
+ * whole cart, view their cart, and view their purchases. Methods within this class also write to the corresponding files
+ * so that data is preserved between logging out and logging in.
+ *
+ *
+ * @author Roger, Somansh, Ethan, Vedant
+ * @version June 13, 2022
+ */
 
 public class Buyer extends User {
     private double balance;
@@ -18,10 +27,10 @@ public class Buyer extends User {
         this.purchases = new ArrayList<ProductPurchase>();
     }
 
-    public Buyer(int uniqueIdentifier) {
+    public Buyer(int uniqueIdentifier) throws NoAccountError{
         super(uniqueIdentifier);
-        this.shoppingCart = new ArrayList<ProductPurchase>();
         this.purchases = new ArrayList<ProductPurchase>();
+        this.shoppingCart = new ArrayList<ProductPurchase>();
     }
 
     public double getBalance() {
@@ -44,11 +53,16 @@ public class Buyer extends User {
         return purchases;
     }
 
+    public void addPurchase(ProductPurchase purchase) {
+        this.purchases.add(purchase);
+    }
+
     public void setPurchases(ArrayList<ProductPurchase> purchases) {
         this.purchases = purchases;
     }
 
     public ArrayList<Buyer> readBuyerDatabase() throws DataFormatException, IOException {
+
         ArrayList<Buyer> database = new ArrayList<Buyer>();
         ArrayList<Product> productDatabase = getProductDatabase();
 
@@ -60,58 +74,45 @@ public class Buyer extends User {
             bfr = new BufferedReader(new FileReader("./src/BuyerDatabase.txt"));
             while (true) {
                 line = bfr.readLine();
-                if (line == null) {
+                if (line == null || line == "") {
                     break;
                 }
                 char identifier = line.charAt(0);
 
                 if (identifier == '*') {
-                    buyer = new Buyer(Integer.parseInt(line.split(" ")[1]));
-                    database.add(buyer);
+                    try {
+                        buyer = new Buyer(Integer.parseInt(line.split(" ")[1]));
+                        database.add(buyer);
+                    } catch (NoAccountError e) {
+                        return null;
+                    }
+
                 } else if (identifier == '+') {
                     line = line.substring(2);
                     String[] cartList = line.split(", ");
-                    for (String productID: cartList) {
+                    for (String productID : cartList) {
                         try {
                             int tempID = Integer.parseInt(productID.split(":")[0]);
                             int tempQuantity = Integer.parseInt(productID.split(":")[1]);
                             buyer.shoppingCart.add(new ProductPurchase(tempID, tempQuantity));
-                        } catch (NumberFormatException e){
-
+                        } catch (NumberFormatException e) {
                         }
-                        /*
-                        for (Product product: productDatabase) {
-                            if (tempID == product.getUniqueID()){
-                                buyer.shoppingCart.add(new ProductPurchase(product.getUniqueID(), tempQuantity));
-                            }
-                        }
-                        */
-
                     }
 
                 } else if (identifier == '-') {
                     line = line.substring(2);
-                   // System.out.println(line);
+
                     String[] purchasedList = line.split(", ");
-                    for (String productID: purchasedList) {
+                    for (String productID : purchasedList) {
                         try {
                             int tempID = Integer.parseInt(productID.split(":")[0]);
-
                             int tempQuantity = Integer.parseInt(productID.split(":")[1]);
                             buyer.purchases.add(new ProductPurchase(tempID, tempQuantity));
                         } catch (NumberFormatException e) {
-
                         }
-                        /*
-                        for (Product product: productDatabase) {
-                            if (tempID == product.getUniqueID()){
-                        }
-                         */
                     }
                 }
-
             }
-
 
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
@@ -122,7 +123,7 @@ public class Buyer extends User {
         return database;
 
     }
-
+/*
     public ArrayList<Seller> readSellerDatabase() {
         File f;
         FileReader fr;
@@ -146,14 +147,20 @@ public class Buyer extends User {
                 }
                 char identifier = line.charAt(0);
                 if (identifier == 42) {
-                    sellerIndex++;
+
                     storeIndex = -1;
-                    seller = new Seller(Integer.parseInt(line.split(" ")[1]));
-                    database.add(seller);
+                    try {
+                        seller = new Seller(Integer.parseInt(line.split(" ")[1]));
+                        if (seller.getSellerIndex() != -1) {
+                            database.add(seller);
+                        }
+                    } catch (NoAccountError e) {
+                        return null;
+                    }
                 } else if (identifier == 43) {
                     storeIndex++;
                     store = new Store(line.split(" ")[1]);
-                    database.get(sellerIndex).addStore(store);
+                    database.get(sellerIndex).addStore(storeIndex, store);
                 } else {
                     try {
                         product = new Product(line.split(", "));
@@ -171,9 +178,19 @@ public class Buyer extends User {
         return database;
     }
 
+ */
+
     public ArrayList<Product> getProductDatabase() {
-        ArrayList<Seller> database= readSellerDatabase();
+        ArrayList<Seller> database = null;
+        try {
+             database = readSellerDatabase();
+        } catch (NoSellers e) {
+            return null;
+        }
         ArrayList<Product> productDatabase = new ArrayList<Product>();
+        if (database == null) {
+            return null;
+        }
         for (Seller seller: database) {
             for (Store store : seller.getStores()) {
                 for (Product product : store.getProducts()) {
@@ -184,10 +201,10 @@ public class Buyer extends User {
         return productDatabase;
     }
 
-    public ArrayList<Product> viewMarketPlace(int choice, Scanner scanner) {
+    public ArrayList<Product> viewMarketPlace(int choice, Scanner scanner, ArrayList<Seller> database) {
         if (choice == 1) {
-            ArrayList<Seller> sortProducts = readSellerDatabase();
-            if (sortProducts == null) {
+
+            if (database == null) {
                 return null;
             }
 
@@ -202,7 +219,7 @@ public class Buyer extends User {
             do {
                 if (sort == 1) {
                     ArrayList<Product> productPrices= new ArrayList<Product>();
-                    for (Seller seller: sortProducts) {
+                    for (Seller seller: database) {
                         for (Store store : seller.getStores()) {
                             for (Product product : store.getProducts()) {
                                 productPrices.add(product);
@@ -217,7 +234,7 @@ public class Buyer extends User {
 
                 } else if (sort == 2) {
                     ArrayList<Product> productQuantities = new ArrayList<>();
-                    for (Seller seller: sortProducts) {
+                    for (Seller seller: database) {
                         for (Store store : seller.getStores()) {
                             for (Product product : store.getProducts()) {
                                 productQuantities.add(product);
@@ -234,7 +251,7 @@ public class Buyer extends User {
 
                 } else if (sort == 3) {
                     ArrayList<Product> productNames = new ArrayList<Product>();
-                    for (Seller seller: sortProducts) {
+                    for (Seller seller: database) {
                         for (Store store : seller.getStores()) {
                             for (Product product : store.getProducts()) {
                                 productNames.add(product);
@@ -255,7 +272,7 @@ public class Buyer extends User {
             } while (sort != 1 && sort != 2 && sort != 3);
 
         } else if (choice == 2) {
-            ArrayList<Seller> searchProducts = readSellerDatabase();
+            ArrayList<Seller> searchProducts = database;
 
             int search;
             do {
@@ -328,9 +345,20 @@ public class Buyer extends User {
     }
 
     public void writeToBuyer() throws DataFormatException, IOException {
+
         ArrayList<Buyer> buyerDatabase = readBuyerDatabase();
-        buyerDatabase.remove(this.getUniqueIdentifier());
-        buyerDatabase.add(this.getUniqueIdentifier(), this);
+
+        if (buyerDatabase.size() != 0) {
+            int toReplace = 0;
+            for (int i = 0; i < buyerDatabase.size(); i++) {
+                if (buyerDatabase.get(i).getUniqueIdentifier() == this.getUniqueIdentifier()) {
+                    toReplace = i;
+                }
+            }
+            buyerDatabase.set(toReplace, this);
+        } else {
+            buyerDatabase.add(this);
+        }
 
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter("./src/BuyerDatabase.txt"));
@@ -338,22 +366,30 @@ public class Buyer extends User {
                 String temp = String.format("* %d\n", buyer.getUniqueIdentifier());
                 bw.write(temp);
                 if (buyer.getShoppingCart() != null) {
-                    bw.write("+ ");
+                    bw.write("- ");
+                    StringBuilder tempLine = new StringBuilder();
                     for (ProductPurchase productPurchase : buyer.shoppingCart) {
-                        bw.write(productPurchase.toString());
-                        bw.write(", ");
-                        bw.flush();
+                        tempLine.append(String.format("%s, ",productPurchase.toString()));
                     }
+                    if (tempLine.length() > 2){
+                        tempLine.substring(0, tempLine.length() - 2);
+                    }
+                    bw.write(String.valueOf(tempLine));
                     bw.write("\n");
+                    bw.flush();
                 }
                 if (buyer.getPurchases() != null && !buyer.getPurchases().isEmpty()) {
-                    bw.write("- ");
+                    bw.write("+ ");
+                    StringBuilder tempLine = new StringBuilder();
                     for (ProductPurchase productPurchase : buyer.purchases) {
-                        bw.write(productPurchase.toString());
-                        bw.write(", ");
-                        bw.flush();
+                        tempLine.append(String.format("%s, ",productPurchase.toString()));
                     }
+                    if (tempLine.length() > 2){
+                        tempLine.substring(0, tempLine.length() - 2);
+                    }
+                    bw.write(String.valueOf(tempLine));
                     bw.write("\n");
+                    bw.flush();
                 } else {
                     System.out.println("You have no purchases!"); //this was added later.
 
@@ -372,8 +408,7 @@ public class Buyer extends User {
         return selected;
     }
 
-    public Store viewStore(Product product) {
-        ArrayList<Seller> fetchStore = readSellerDatabase();
+    public Store viewStore(Product product, ArrayList<Seller> fetchStore) {
         for (Seller seller: fetchStore) {
             for (Store store : seller.getStores()) {
                 for (Product products : store.getProducts()) {
@@ -414,12 +449,22 @@ public class Buyer extends User {
         }
     }
 
-    public void writeToDatabase(boolean newSeller) {//come back
-        ArrayList<Seller> database = readSellerDatabase();
+    public void writeToDatabase(boolean newSeller, ArrayList<Seller> database) {
+        //ArrayList<Seller> database = readSellerDatabase();
+        if (database == null) {
+            return;
+        }
+
+        ArrayList<Seller> removeDuplicates = new ArrayList<Seller>();
+        for (Seller seller: database) {
+            if (seller.getSellerIndex() != -1) {
+                removeDuplicates.add(seller.getSellerIndex(), seller);
+            }
+        }
 
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter("./src/SellerDatabase.txt"));
-            for (Seller seller : database) {
+            for (Seller seller : removeDuplicates) {
                 String temp = String.format("* %d\n", seller.getSellerIndex());
                 bw.write(temp);
                 if (seller.getStores() != null) {
@@ -439,7 +484,8 @@ public class Buyer extends User {
         }
     }
 
-    public void buyProduct(Product product, int numProductsForPurchase, Store store, Scanner scanner) {
+    public void buyProduct(Product product, int numProductsForPurchase, Store store, Scanner scanner, ArrayList<Seller> database) {
+        boolean success = false;
         int index = 0;
         for (int i = 0; i < store.getProducts().size(); i++) {
             if (store.getProducts().get(i).getUniqueID() == product.getUniqueID()) {
@@ -448,13 +494,16 @@ public class Buyer extends User {
         }
         if (product.getQuantityForPurchase() > 0) {
             double total = product.getPrice() * numProductsForPurchase;
-            if (product.getQuantityForPurchase() >= numProductsForPurchase) {
+            if (product.getQuantityForPurchase() > numProductsForPurchase) {
                 if (balance >= total) {
                     balance -= total;
                     product.setQuantityForPurchase(product.getQuantityForPurchase() - numProductsForPurchase);
                     store.getProducts().get(index).setQuantityForPurchase(product.getQuantityForPurchase());
                     System.out.printf("%d of %s have been bought for $%.2f.\n", numProductsForPurchase, product.getName(), total);
+                    product.setQuantitySold(product.getQuantitySold() + numProductsForPurchase);
                     purchases.add(new ProductPurchase(product.getUniqueID(), numProductsForPurchase));
+
+                    success = true;
                 } else {
                     System.out.println(super.getName() + " cannot afford " + product.getName());
                 }
@@ -465,8 +514,9 @@ public class Buyer extends User {
                     product.setQuantityForPurchase(0);
                     store.getProducts().get(index).setQuantityForPurchase(0);
                     store.getProducts().remove(product);
-                    System.out.printf("You got the last %d %ss available!\n", product.getQuantityForPurchase(), product.getName());
+                    System.out.printf("You got the last %d %ss available!\n", numProductsForPurchase, product.getName());
                     purchases.add(new ProductPurchase(product.getUniqueID(), numProductsForPurchase));
+                    success = true;
                 } else {
                     System.out.println(super.getName() + " cannot afford " + product.getName());
                 }
@@ -486,8 +536,9 @@ public class Buyer extends User {
                         product.setQuantityForPurchase(0);
                         store.getProducts().get(index).setQuantityForPurchase(0);
                         store.getProducts().remove(product);
-                        System.out.printf("You got the last %d %ss available!\n", product.getQuantityForPurchase(), product.getName());
+                        System.out.printf("You got the last %d %ss available!\n", numProductsForPurchase, product.getName());
                         purchases.add(new ProductPurchase(product.getUniqueID(), numProductsForPurchase));
+                        success = true;
                     } else {
                         System.out.println(super.getName() + " cannot afford " + product.getName());
                     }
@@ -496,10 +547,44 @@ public class Buyer extends User {
         } else {
             System.out.printf("%s is out of stock!\n", product.getName());
         }
-        writeToDatabase(false);
+        if (success) {
+
+            Seller toEdit = null;
+            boolean completed = false;
+            for (Seller seller: database) {
+                for (Store storeX: seller.getStores()) {
+                    for (Product productX: storeX.getProducts()) {
+                        if (productX.getUniqueID() == product.getUniqueID()) {
+                            toEdit = seller;
+                            ArrayList<Store> tempStores = toEdit.getStores();
+                            Store tempStore = storeX;
+
+                            ArrayList<Product> tempProduct = tempStore.getProducts();
+                            Product tempBuy = productX;
+                            tempProduct.remove(tempBuy);
+
+                            tempProduct.add(product);
+                            tempStore.setProducts(tempProduct);
+
+                            tempStores.remove(tempStore);
+                            tempStores.add(tempStore);
+                            toEdit.setStores(tempStores);
+                            completed = true;
+                            break;
+                        }
+                        if (completed) break;
+                    }
+                    if (completed) break;
+                }
+                if (completed) break;
+            }
+            database.remove(toEdit.getSellerIndex());
+            database.add(toEdit.getSellerIndex(), toEdit);
+            this.writeToDatabase(false, database);
+        }
     }
 
-    public int purchaseCart() {
+    public int purchaseCart(ArrayList<Seller> updated) {
         ArrayList<ProductPurchase> shoppingCartFile = viewCart();
         if (shoppingCartFile == null) {
             shoppingCartFile = new ArrayList<ProductPurchase>();
@@ -507,7 +592,6 @@ public class Buyer extends User {
 
         shoppingCart.addAll(shoppingCartFile);
 
-        ArrayList<Seller> sellers = readSellerDatabase();
         double totalSum = 0;
         for (ProductPurchase productPurchase : shoppingCart) {
             totalSum = totalSum + (productPurchase.getPrice() * productPurchase.getOrderQuantity());
@@ -519,10 +603,43 @@ public class Buyer extends User {
                     productPurchase.setQuantityForPurchase(productPurchase.getQuantityForPurchase() - productPurchase.getOrderQuantity());
                 }
             }
+
+
+
+            Seller toEdit = null;
+            for (Seller seller: updated ) {
+                for (Store store: seller.getStores()) {
+                    for (ProductPurchase productPurchase : shoppingCart) {
+                        for (Product product : store.getProducts()) {
+                            if (productPurchase.getUniqueID() == product.getUniqueID()) {
+                                toEdit = seller;
+                                ArrayList<Store> tempStores = toEdit.getStores();
+                                Store tempStore = store;
+
+                                ArrayList<Product> tempProduct = tempStore.getProducts();
+                                Product tempBuy = productPurchase;
+                                tempProduct.remove(product);
+
+                                tempProduct.add(tempBuy);
+                                tempStore.setProducts(tempProduct);
+
+                                tempStores.remove(store);
+                                tempStores.add(tempStore);
+                                seller.setStores(tempStores);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            updated.remove(toEdit.getSellerIndex());
+            updated.add(toEdit.getSellerIndex(), toEdit);
+
             purchases.addAll(shoppingCart);
             shoppingCart.removeAll(purchases);
             balance = balance - totalSum;
             System.out.println("Thank you for your purchases!");
+            writeToDatabase(false, updated);
             return 0;
 
         } else if (totalSum > balance) {
@@ -532,6 +649,7 @@ public class Buyer extends User {
             System.out.printf("Balance: %.2f\n", balance);
             return 1;
         }
+
         return 0;
     }
 
@@ -569,11 +687,10 @@ public class Buyer extends User {
         return purchases;
     }
 
-    public Seller shopBySeller(Scanner scanner) {
+    public Seller shopBySeller(Scanner scanner, ArrayList<Seller> databaseSeller) {
 
         // add a do while to take into account "No seller found with the name: "
 
-        ArrayList<Seller> shopSeller = readSellerDatabase();
 
         System.out.println("What is the name of the seller you want to buy from?");
         String nameSeller = scanner.nextLine();
@@ -581,7 +698,7 @@ public class Buyer extends User {
 
         // Find the seller object that matches the entered name
         Seller seller = null;
-        for (Seller s : shopSeller) {
+        for (Seller s : databaseSeller) {
             if (s.getName().equalsIgnoreCase(nameSeller)) {
                 seller = s;
                 return seller;
