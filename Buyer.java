@@ -1,3 +1,4 @@
+import javax.lang.model.element.ModuleElement;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,28 +89,43 @@ public class Buyer extends User {
                     }
 
                 } else if (identifier == '+') {
-                    line = line.substring(2);
-                    String[] cartList = line.split(", ");
-                    for (String productID : cartList) {
-                        try {
-                            int tempID = Integer.parseInt(productID.split(":")[0]);
-                            int tempQuantity = Integer.parseInt(productID.split(":")[1]);
-                            buyer.shoppingCart.add(new ProductPurchase(tempID, tempQuantity));
-                        } catch (NumberFormatException e) {
+                    try {
+                        line = line.substring(2);
+                    } catch (StringIndexOutOfBoundsException e) {
+                        buyer.setShoppingCart(new ArrayList<ProductPurchase>());
+                    }
+                    if (line != "") {
+                        String[] cartList = line.split(", ");
+                        for (String productID : cartList) {
+                            try {
+                                int tempID = Integer.parseInt(productID.split(":")[0]);
+                                int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                                buyer.shoppingCart.add(new ProductPurchase(tempID, tempQuantity));
+                            } catch (NumberFormatException e) {
+                            }
                         }
+                    } else {
+                        buyer.setShoppingCart(new ArrayList<ProductPurchase>());
                     }
 
                 } else if (identifier == '-') {
-                    line = line.substring(2);
-
-                    String[] purchasedList = line.split(", ");
-                    for (String productID : purchasedList) {
-                        try {
-                            int tempID = Integer.parseInt(productID.split(":")[0]);
-                            int tempQuantity = Integer.parseInt(productID.split(":")[1]);
-                            buyer.purchases.add(new ProductPurchase(tempID, tempQuantity));
-                        } catch (NumberFormatException e) {
+                    try {
+                        line = line.substring(2);
+                    } catch (StringIndexOutOfBoundsException e) {
+                        buyer.setPurchases(new ArrayList<ProductPurchase>());
+                    }
+                    if (line != "") {
+                        String[] purchasedList = line.split(", ");
+                        for (String productID : purchasedList) {
+                            try {
+                                int tempID = Integer.parseInt(productID.split(":")[0]);
+                                int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                                buyer.purchases.add(new ProductPurchase(tempID, tempQuantity));
+                            } catch (NumberFormatException e) {
+                            }
                         }
+                    } else {
+                        buyer.setPurchases(new ArrayList<ProductPurchase>());
                     }
                 }
             }
@@ -366,7 +382,7 @@ public class Buyer extends User {
                 String temp = String.format("* %d\n", buyer.getUniqueIdentifier());
                 bw.write(temp);
                 if (buyer.getShoppingCart() != null) {
-                    bw.write("- ");
+                    bw.write("+ ");
                     StringBuilder tempLine = new StringBuilder();
                     for (ProductPurchase productPurchase : buyer.shoppingCart) {
                         tempLine.append(String.format("%s, ",productPurchase.toString()));
@@ -379,7 +395,7 @@ public class Buyer extends User {
                     bw.flush();
                 }
                 if (buyer.getPurchases() != null && !buyer.getPurchases().isEmpty()) {
-                    bw.write("+ ");
+                    bw.write("- ");
                     StringBuilder tempLine = new StringBuilder();
                     for (ProductPurchase productPurchase : buyer.purchases) {
                         tempLine.append(String.format("%s, ",productPurchase.toString()));
@@ -607,30 +623,38 @@ public class Buyer extends User {
 
 
             Seller toEdit = null;
-            for (Seller seller: updated ) {
-                for (Store store: seller.getStores()) {
-                    for (ProductPurchase productPurchase : shoppingCart) {
-                        for (Product product : store.getProducts()) {
-                            if (productPurchase.getUniqueID() == product.getUniqueID()) {
-                                toEdit = seller;
-                                ArrayList<Store> tempStores = toEdit.getStores();
-                                Store tempStore = store;
+            boolean completed = false;
+            for (ProductPurchase productPurchase : shoppingCart) {
+                completed = false;
+                for (Seller seller : updated) {
+                    for (Store store : seller.getStores()) {
 
-                                ArrayList<Product> tempProduct = tempStore.getProducts();
-                                Product tempBuy = productPurchase;
-                                tempProduct.remove(product);
+                            for (Product product : store.getProducts()) {
+                                if (productPurchase.getUniqueID() == product.getUniqueID()) {
+                                    toEdit = seller;
+                                    ArrayList<Store> tempStores = toEdit.getStores();
+                                    Store tempStore = store;
 
-                                tempProduct.add(tempBuy);
-                                tempStore.setProducts(tempProduct);
+                                    ArrayList<Product> tempProduct = tempStore.getProducts();
+                                    Product tempBuy = productPurchase;
+                                    tempProduct.remove(product);
 
-                                tempStores.remove(store);
-                                tempStores.add(tempStore);
-                                seller.setStores(tempStores);
-                                break;
+                                    tempProduct.add(tempBuy);
+                                    tempStore.setProducts(tempProduct);
+
+                                    tempStores.remove(store);
+                                    tempStores.add(tempStore);
+                                    seller.setStores(tempStores);
+                                    completed = true;
+                                    break;
+                                }
+                                if (completed) break;
                             }
-                        }
+                        if (completed) break;
                     }
+                    if (completed) break;
                 }
+
             }
             updated.remove(toEdit.getSellerIndex());
             updated.add(toEdit.getSellerIndex(), toEdit);
