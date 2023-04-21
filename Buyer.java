@@ -296,16 +296,31 @@ public class Buyer extends User {
             ArrayList<Seller> searchProducts = database;
 
             int search;
+            String searching;
             do {
-                System.out.println("What would you like to search for?\n1.Name \n2. Store\n3. Description");
-                String searching = scanner.nextLine();
+                do {
+                    searching = JOptionPane.showInputDialog(null, "What would you like to search for?\n1.Name \n2. Store\n3. Description",
+                            "How Would you Like to Search? (Please enter the number corresponding to the option)", JOptionPane.QUESTION_MESSAGE);
+                    if (searching == null || searching.isEmpty()) {
+                        JOptionPane.showMessageDialog(null, "Please enter an option before continuing!",
+                                "ERROR!", JOptionPane.ERROR_MESSAGE);
+                    }
+                } while (searching == null || searching.isEmpty());
+
                 search = readInt(searching);
             } while (search == -1);
 
             do {
                 if (search == 1) {
-                    System.out.println("Enter the name of the product you want to buy.");
-                    String nameProd = scanner.nextLine();
+                    String nameProd;
+                    do {
+                        nameProd = JOptionPane.showInputDialog(null, "Enter the name of the product you want to buy.",
+                                "Search for Product", JOptionPane.QUESTION_MESSAGE);
+                        if (nameProd == null || nameProd.isEmpty()) {
+                            JOptionPane.showMessageDialog(null, "Please enter a name before continuing!",
+                                    "ERROR!", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } while (nameProd == null || nameProd.isEmpty());
 
                     ArrayList<Product> nameProduct = new ArrayList<>();
 
@@ -323,8 +338,15 @@ public class Buyer extends User {
                 }
 
                 if (search == 2) { // Store
-                    System.out.println("Enter the name of the store you want to buy from.");
-                    String storeProd = scanner.nextLine();
+                    String storeProd;
+                    do {
+                        storeProd = JOptionPane.showInputDialog(null, "Enter the name of the store you want to buy from.",
+                                "Search for Store", JOptionPane.QUESTION_MESSAGE);
+                        if (storeProd == null || storeProd.isEmpty()) {
+                            JOptionPane.showMessageDialog(null, "Please enter a name before continuing!",
+                                    "ERROR!", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } while (storeProd == null || storeProd.isEmpty());
 
                     Store storeName = null; //is it okay is i put
 
@@ -339,9 +361,15 @@ public class Buyer extends User {
                     return storeName.getProducts();
                 }
                 if (search == 3) { // description
-
-                    System.out.println("Enter the description of the product you want to buy.");
-                    String prodDescription = scanner.nextLine();
+                    String prodDescription;
+                    do {
+                        prodDescription = JOptionPane.showInputDialog(null, "Enter the description of the product you want to buy.",
+                                "Search for Product Description", JOptionPane.QUESTION_MESSAGE);
+                        if (prodDescription == null || prodDescription.isEmpty()) {
+                            JOptionPane.showMessageDialog(null, "Please enter a description before continuing!",
+                                    "ERROR!", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } while (prodDescription == null || prodDescription.isEmpty());
 
                     ArrayList<Product> descriptionProd = new ArrayList<Product>();
 
@@ -412,14 +440,18 @@ public class Buyer extends User {
                     bw.write("\n");
                     bw.flush();
                 } else {
-                    System.out.println("You have no purchases!"); //this was added later.
+                    //System.out.println("You have no purchases!"); //this was added later.
+                    JOptionPane.showMessageDialog(null, "You have no purchases!",
+                            "ERROR!", JOptionPane.ERROR_MESSAGE);
 
                 }
                 bw.flush();
             }
             bw.close();
         } catch (IOException e) {
-            System.out.println("Database Malformed");
+            //System.out.println("Database Malformed");
+            JOptionPane.showMessageDialog(null, "Database Malformed",
+                    "ERROR!", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -448,11 +480,15 @@ public class Buyer extends User {
                 if (store.getProducts().get(i).getUniqueID() == product.getUniqueID() && product.getQuantityForPurchase() > 0) {
                     shoppingCart.add(new ProductPurchase(product.getUniqueID(), quantity));
                 } else {
-                    System.out.println("This product does not exist in our store!");
+                    //System.out.println("This product does not exist in our store!");
+                    JOptionPane.showMessageDialog(null, "This product does not exist in our store!",
+                            "ERROR!", JOptionPane.ERROR_MESSAGE);
                 }
             }
         } catch (NullPointerException e) {
-            System.out.println("This store has no products left!");
+            //System.out.println("This store has no products left!");
+            JOptionPane.showMessageDialog(null, "This store has no products left!",
+                    "Out of Stock!", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -461,12 +497,16 @@ public class Buyer extends User {
         for (int i = 0; i < shoppingCart.size(); i++) {
             if (shoppingCart.get(i).getUniqueID() == product.getUniqueID()) {
                 shoppingCart.remove(i);
-                System.out.printf("%s has been removed from the shopping cart!\n", product.getName());
+                //System.out.printf("%s has been removed from the shopping cart!\n", product.getName());
+                JOptionPane.showMessageDialog(null, product.getName() + " has been removed from the shopping cart!",
+                        "Removed!", JOptionPane.INFORMATION_MESSAGE);
                 index++;
             }
         }
         if (index == 0) {
-            System.out.printf("%s is not in your cart.\n", product.getName());
+            //System.out.printf("%s is not in your cart.\n", product.getName());
+            JOptionPane.showMessageDialog(null, product.getName() + " is not in your cart.",
+                    "ERROR!", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -501,7 +541,8 @@ public class Buyer extends User {
             }
             bw.close();
         } catch (IOException e) {
-            System.out.println("Database Malformed");
+            JOptionPane.showMessageDialog(null, "Database Malformed",
+                    "ERROR!", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -749,8 +790,10 @@ public class Buyer extends User {
         // add a do while to take into account "No seller found with the name: "
 
 
-        System.out.println("What is the name of the seller you want to buy from?");
-        String nameSeller = scanner.nextLine();
+        //System.out.println("What is the name of the seller you want to buy from?");
+        String nameSeller = JOptionPane.showInputDialog(null,
+                "What is the name of the seller you want to buy from?",
+                "Search for Seller Name", JOptionPane.QUESTION_MESSAGE);
 
 
         // Find the seller object that matches the entered name
@@ -763,7 +806,9 @@ public class Buyer extends User {
         }
 
         if (seller == null) {
-            System.out.println("No seller found with the name: " + nameSeller);
+            //System.out.println("No seller found with the name: " + nameSeller);
+            JOptionPane.showMessageDialog(null, "No seller found with the name: " + nameSeller,
+                    "No Sellers found!", JOptionPane.ERROR_MESSAGE);
         }
 
         return null;
@@ -774,8 +819,10 @@ public class Buyer extends User {
 
         ArrayList<Store> shopSeller = seller.getStores();
 
-        System.out.println("Enter the name of the shop you want to see products for:");
-        String shopName = scanner.nextLine();
+        //System.out.println("Enter the name of the shop you want to see products for:");
+        String shopName = JOptionPane.showInputDialog(null,
+                "Enter the name of the shop you want to see products for",
+                "Search for Store Name", JOptionPane.QUESTION_MESSAGE);
 
         // Find the store object that matches the entered name
         for (Store store : shopSeller) {
@@ -793,7 +840,9 @@ public class Buyer extends User {
             result = Integer.parseInt(input);
             return result;
         } catch (NumberFormatException e) {
-            System.out.println("Please enter a valid Integer!");
+            //System.out.println("Please enter a valid Integer!");
+            JOptionPane.showMessageDialog(null, "Please enter a valid Integer!",
+                    "ERROR!", JOptionPane.ERROR_MESSAGE);
             return -1;
         }
     }
