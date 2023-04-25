@@ -1,3 +1,4 @@
+import javax.swing.*;
 import java.util.ArrayList;
 import java.io.*;
 import java.util.InputMismatchException;
@@ -21,13 +22,16 @@ public class Seller extends User {
     private boolean isSeller(int sellerIndex) {
         return (sellerIndex != -1);
     }
-    public Seller(int uniqueIdentifier, String email, String password, String name, int age, int sellerIndex, ArrayList<Store> stores) {
-        super(uniqueIdentifier, email, password, name, age, sellerIndex);
+    public Seller(int uniqueIdentifier, String email, String password, String name, int age, ArrayList<Store> stores) {
+        super(uniqueIdentifier, email, password, name, age);
         this.stores = stores;
     }
-    public Seller(int uniqueIdentifier) throws NoAccountError {
-        super(uniqueIdentifier);
+    public Seller(int uniqueIdentifier){
+        super(uniqueIdentifier, true);
         this.stores = new ArrayList<Store>();
+    }
+    public Seller (String[] userDetails) throws UserDatabaseFormatError {
+        super(userDetails);
     }
     public Seller() {
         this.stores = null;
@@ -65,9 +69,7 @@ public class Seller extends User {
                 if (identifier == '*') {
                     try {
                         buyer = new Buyer(Integer.parseInt(line.split(" ")[1]));
-                        if (buyer.getSellerIndex() == -1) {
-                            database.add(buyer);
-                        }
+                        database.add(buyer);
                     } catch (NoAccountError e) {
                         return null;
                     }
@@ -130,11 +132,14 @@ public class Seller extends User {
 
     }
     public void addStore(int storeIndex, Store store) {
+
         try {
             this.stores.add(storeIndex, store);
         } catch (IndexOutOfBoundsException e) {
             this.stores.add(store);
         }
+
+
     }
     public ArrayList<Store> getStores() {
         return stores;
@@ -204,8 +209,13 @@ public class Seller extends User {
                 Store store = new Store(storeName, products);
                 this.addStore(-1, store);
 
-                updateDatabase.add(this.getSellerIndex(), this);
-
+                for (Iterator<Seller> it = updateDatabase.iterator(); it.hasNext(); ) {
+                    Seller seller = it.next();
+                    if (seller.getUniqueIdentifier() == this.getUniqueIdentifier()) {
+                        it.remove();
+                    }
+                }
+                updateDatabase.add(this);
                 writeToDatabase(false, updateDatabase); //
             } else if (decision == 2) {//Delete Store
                 int i = 1;
@@ -398,11 +408,13 @@ public class Seller extends User {
             } else if (decision == 4) {
                 getSellerStatistics(scanner);
             } else if (decision == 5) {
-                this.changeAccount(scanner);
+                this.changeAccount(scanner, true);
             } else if (decision == 6) {
-                this.deleteAccount(scanner);
-                System.out.println("Logging you out...");
-                return;
+                boolean x = this.deleteAccount(scanner, true);
+                if (x) {
+                    System.out.println("Logging you out...");
+                    return;
+                }
             } else if (decision == 7) {
                 System.out.println("Thank you for shopping with us!");
                 return;
@@ -450,46 +462,11 @@ public class Seller extends User {
     }
 
     public void writeToDatabase(boolean newSeller, ArrayList<Seller> updateDatabase) {
-        //ArrayList<Seller> database = readSellerDatabase();
-        if (updateDatabase == null) {
-            return;
-        } else if (updateDatabase.size() != 0) {
-            if (this.getUniqueIdentifier() != -1) {
-                if (!newSeller) {
-                    updateDatabase.remove(this);
-                    updateDatabase.add(this.getSellerIndex(), this);
-                } else {
-                    try {
-                        updateDatabase.set(this.getSellerIndex(), this);
-                    }
-                    catch (IndexOutOfBoundsException e) {
-                        updateDatabase.add(this);
-                    }
-                }
-            }
-        }
-        /*
-        ArrayList<Seller> removeDuplicates = null;
-        for (Seller seller: database) {
-            removeDuplicates.set(seller.getSellerIndex(), seller);
-        }
-
-         */
-        //ArrayList<Seller> removeDuplicates = new ArrayList<Seller>(new LinkedHashSet<Seller>(database));
+        if (updateDatabase == null) return;
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter("./src/SellerDatabase.txt"));
             for (Seller seller : updateDatabase) {
-                String temp = String.format("* %d\n", seller.getSellerIndex());
-                bw.write(temp);
-                if (seller.getStores() != null) {
-                    for (Store store : seller.getStores()) {
-                        bw.write(String.format("+ %s\n", store.getStoreName()));
-                        for (Product product : store.getProducts()) {
-                            bw.write(product.toDatabase());
-                            bw.write("\n");
-                        }
-                    }
-                }
+                bw.write(seller.serverString());
                 bw.flush();
             }
             bw.close();
@@ -721,4 +698,21 @@ public class Seller extends User {
         }
         return products;
     }
+
+    public String serverString() {
+        String id = String.format("* %d\n", this.getUniqueIdentifier());
+        String storeName;
+        String productName;
+        for (Store store: this.getStores()){
+            storeName = String.format("+ %s\n", store.getStoreName());
+            for (Product product: store.getProducts()) {
+                productName = product.toDatabase();
+                storeName = storeName.concat(productName);
+                storeName = storeName.concat("\n");
+            }
+            id = id.concat(storeName);
+        }
+        return id;
+    }
+
 }

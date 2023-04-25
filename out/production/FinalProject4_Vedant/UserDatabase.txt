@@ -1,5 +1,3 @@
-0, john@purdue, 1234, john, 25, 0
-1, customer1@email, 1234, customer1, 25, -1
-2, seller@test, 1234, seller, 12, 1
-3, x@1, 1234, x, 23, -1
-4, x@a, 124, x, 23, -1
+0, john@purdue, 1234, john, 25
+1, customer1@email, 1234, customer1, 49
+2, seller@test, 1234, seller, 32

@@ -20,7 +20,7 @@ import java.util.Arrays;
 public class Main {
     public static final String EXIT = "Thank you! Please come again!"; //Displayed when user exits the program.
     public static final String INVALID_OPTION = "Please select a valid menu option!";
-    public static void main(String[] args) throws DataFormatException, IOException {
+    public static void main(String[] args) throws DataFormatException, IOException, UserDatabaseFormatError {
         User loginAccess = new User();
         User user = null;
         boolean isSeller = false;
@@ -499,10 +499,10 @@ public class Main {
                             }
                         }
                     } else if (shopBy == 3) {
-                        buyer.changeAccount(scanner);
+                        buyer.changeAccount(scanner, false);
                         continueShopping = 1;
                     } else if (shopBy == 4) {
-                        buyer.deleteAccount(scanner);
+                        buyer.deleteAccount(scanner, false);
                         System.out.println(EXIT);
                         System.out.println("Logging you out!");
                         leave = true;
@@ -512,14 +512,8 @@ public class Main {
                 } while (continueShopping == 1);
             }
         } else {
-            try {
-                Seller seller = new Seller(user.getUniqueIdentifier());
-                seller.sellerMenu(scanner, newSeller);
-            } catch (NoAccountError e) {
-                System.out.println("No Accounts Exist! Logging you out!");
-                return;
-            }
-
+            Seller seller = new Seller(user.getUniqueIdentifier());
+            seller.sellerMenu(scanner, newSeller);
         }
     }
     public static int readInt(String input) {

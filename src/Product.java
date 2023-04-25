@@ -54,12 +54,9 @@ public class Product {
                 if (identifier == 42) {
                     sellerIndex++;
                     storeIndex = -1;
-                    try {
-                        seller = new Seller(Integer.parseInt(line.split(" ")[1]));
-                        database.add(seller);
-                    } catch (NoAccountError e) {
-                        return null;
-                    }
+                    seller = new Seller(Integer.parseInt(line.split(" ")[1]));
+                    database.add(seller);
+
                 } else if (identifier == 43) {
                     storeIndex++;
                     store = new Store(line.split(" ")[1]);

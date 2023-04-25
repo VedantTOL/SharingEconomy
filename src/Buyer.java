@@ -18,18 +18,18 @@ import java.util.zip.DataFormatException;
 
 public class Buyer extends User {
     private double balance;
-    private ArrayList<ProductPurchase> shoppingCart;
-    private ArrayList<ProductPurchase> purchases;
+    protected ArrayList<ProductPurchase> shoppingCart;
+    protected ArrayList<ProductPurchase> purchases;
 
     public Buyer(int uniqueIdentifier, String email, String password, String name, int age, double balance) {
-        super(uniqueIdentifier, email, password, name, age, -1);
+        super(uniqueIdentifier, email, password, name, age);
         this.balance = balance;
         this.shoppingCart = new ArrayList<ProductPurchase>();
         this.purchases = new ArrayList<ProductPurchase>();
     }
 
     public Buyer(int uniqueIdentifier) throws NoAccountError{
-        super(uniqueIdentifier);
+        super(uniqueIdentifier, false);
         this.purchases = new ArrayList<ProductPurchase>();
         this.shoppingCart = new ArrayList<ProductPurchase>();
     }
