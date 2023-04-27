@@ -10,7 +10,7 @@ public class Server {
     public static void main(String[] args) throws IOException, DataFormatException {
         boolean newWrite = false;
         ArrayList<Seller> sellerDatabase = readSellerDatabase();
-        //ArrayList<Buyer> buyerDatabase = readBuyerDatabase();
+        ArrayList<Buyer> buyerDatabase = readBuyerDatabase();
         ArrayList<Product> productDatabase = getProductDatabase(sellerDatabase);
         ArrayList<User> loginDatabase;
 
@@ -27,6 +27,7 @@ public class Server {
         byte action;
         String data = "";
         while (true) {
+            data = "";
             action = (byte) input.read();
 
             if (action == 0b0) {
@@ -35,6 +36,7 @@ public class Server {
                 //request data
                 if (action == 0b1100) {
                     //send all seller data
+
                     bw.write("sellerDatabase\n");
                     bw.flush();
 
@@ -57,17 +59,30 @@ public class Server {
                     bw.flush();
 
                     String email = bfr.readLine();
-                    String password = null;
-                    for (User user: loginDatabase) {
+                    User user = null;
+                    for (User parse: loginDatabase) {
                         if (user.getEmail().equals(email)) {
-                            password = user.getPassword();
+                            user = parse;
                             break;
                         }
                     }
-                    bw.write(password);
+                    bw.write(user.constructorString());
                     bw.flush();
 
 
+                } else if (action == 0b1111) {
+                    //send buyer information
+                    if (newWrite) {
+                        buyerDatabase = readBuyerDatabase();
+                    }
+                    bw.write("buyerDatabase\n");
+                    bw.flush();
+                    for (Buyer buyer: buyerDatabase) {
+                        data = data.concat(buyer.serverString());
+                    }
+                    bw.write(data);
+                    bw.write("end\n");
+                    bw.flush();
                 }
 
             } else {
@@ -97,6 +112,7 @@ public class Server {
         return productDatabase;
     }
 
+    //complete
     public static ArrayList<Seller> readSellerDatabase() {
         //initialize variables;
         BufferedReader bfr = null;
@@ -225,7 +241,6 @@ public class Server {
         }
 
         return database;
-
     }
 
     public static ArrayList<User> getInformation(boolean seller) {

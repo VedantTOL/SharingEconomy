@@ -765,4 +765,21 @@ public class Buyer extends User {
         }
     }
 
+    public String serverString() {
+        String id = String.format("* %d\n", this.getUniqueIdentifier());
+        String shopping = "+";
+        String purchased = "-";
+        for (ProductPurchase product: this.getPurchases()){
+            purchased = purchased.concat(String.format("%d:%d, ", product.getUniqueID(), product.getOrderQuantity()));
+        }
+        purchased = purchased.substring(0, purchased.length() - 2);
+        for (ProductPurchase product: this.getShoppingCart()){
+            shopping = shopping.concat(String.format("%d:%d, ", product.getUniqueID(), product.getOrderQuantity()));
+        }
+        shopping = shopping.substring(0, shopping.length() - 2);
+        id = id.concat(shopping);
+        id = id.concat("\n");
+        id = id.concat(purchased);
+        return id;
+    }
 }
