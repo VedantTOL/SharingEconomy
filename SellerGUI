@@ -1,0 +1,156 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+
+public class SellerGUI {
+
+   public String storename;
+    private JButton addButton;
+    private JButton deleteButton;
+    private JButton editButton;
+    private JButton statisticsButton;
+    private JButton editAccountButton;
+    private JButton deleteAccountButton;
+    private JButton logoutButton;
+    private JFrame frame;
+
+    public static void main(String[] args) {
+
+        JFrame frame = new JFrame("What actions would you like to take?");
+        Container content = frame.getContentPane();
+        content.setLayout(new BorderLayout());
+        frame.setSize(600, 400);
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+        frame.setLayout(new BorderLayout());
+
+
+        JPanel buttonPanel = new JPanel();
+        JButton addButton = new JButton("Add Store");
+        JButton deleteButton = new JButton("Delete Store");
+        JButton editButton = new JButton("Edit Store");
+        JButton statisticsButton = new JButton("View Statistics");
+        JButton editAccountButton = new JButton("Edit Account");
+        JButton deleteAccountButton = new JButton("Delete Account");
+        JButton logoutButton = new JButton("Logout");
+
+        buttonPanel.add(addButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(editButton);
+        buttonPanel.add(statisticsButton);
+        buttonPanel.add(editAccountButton);
+        buttonPanel.add(deleteAccountButton);
+        buttonPanel.add(logoutButton);
+
+        frame.getContentPane().add(buttonPanel, BorderLayout.CENTER);
+
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                String storeName = nameStoreQuestion.getText();
+
+
+            }
+        });
+
+        deleteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+
+
+        editButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Handle the edit store action
+                // ...
+            }
+        });
+        statisticsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Handle the view statistics action
+                // ...
+            }
+        });
+        editAccountButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Handle the edit account action
+                // ...
+            }
+        });
+        deleteAccountButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Handle the delete account action
+                // ...
+            }
+        });
+        logoutButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Handle the logout action
+                // ...
+            }
+        });
+    }
+
+        private static class addButtonFrame extends JFrame {
+        public String storeName;
+            private JTextField nameStoreQuestion;
+            private JTextField productQuestion;
+
+            public addButtonFrame(String title) {
+                super(title);
+                nameStoreQuestion = new JTextField(20);
+                productQuestion = new JPasswordField(20);
+                setLayout(new GridLayout(3, 2));
+                add(new JLabel("What is the name of the store you want to add?"));
+                storeName = nameStoreQuestion.getText();
+
+                add(nameStoreQuestion);
+                add(new JLabel("How many products do you want to add?"));
+                add(productQuestion);
+            }
+
+
+
+
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+}
