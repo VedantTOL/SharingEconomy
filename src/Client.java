@@ -56,16 +56,19 @@ public class Client extends User {
         OutputStream w = socket.getOutputStream();
         InputStream input = socket.getInputStream();
         BufferedReader bfr = new BufferedReader(new InputStreamReader(input));
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(w));
 
         w.write(0b1100);
         w.flush();
         //w.close();
+        String toServer = "";
 
         String action;
         int lineCount;
         String[] data;
 
         while (true) {
+            toServer = "";
             action = bfr.readLine();
             System.out.println(action);
             if (action.equals("sellerDatabase")) {
@@ -75,10 +78,38 @@ public class Client extends User {
                 client.setBuyerDatabase(client.buyerServerRead(parseServer(bfr)));
             } else if (action.equals("loginDatabase")) {
                 client.setLoginDetails(client.getUserInfo(bfr.readLine()));
-                }
-            }
+            } else if (action.equals ("writeSeller")) {
+                bw.write("sellerDatabase\n");
 
+                bw.flush();
+
+
+                for (Seller seller : client.getSellerDatabase()) {
+                    toServer = toServer.concat(seller.serverString());
+                }
+
+                bw.write(toServer);
+                bw.write("end\n");
+                bw.flush();
+            } else if (action.equals("sendLogin")) {
+                //send login information
+                bw.write(client.getLoginDetails().constructorString());
+
+            } else if (action.equals("sendBuyer")) {
+                //send buyer information
+
+                bw.write("buyerDatabase\n");
+                bw.flush();
+                for (Buyer buyer : client.getBuyerDatabase()) {
+                    toServer = toServer.concat(buyer.serverString());
+                }
+                bw.write(toServer);
+                bw.write("end\n");
+                bw.flush();
+
+            }
         }
+    }
 
     public static ArrayList<String> parseServer(BufferedReader bfr) throws IOException {
         ArrayList<String> data = new ArrayList<String>();
