@@ -2,7 +2,6 @@ import javax.swing.*;
 import java.io.IOException;
 import java.io.*;
 import java.net.*;
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -101,23 +100,19 @@ public class Client extends JComponent implements Runnable {
             createAccountButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    LoginCredentials loginCredentials = new LoginCredentials();
+                    BuyerLoginCredentials loginCredentials = new BuyerLoginCredentials();
                     loginCredentials.setVisible(true);
                     dispose();
 
-                    // generate new frame here that gives the customer options
-                    // probably need to read from server (which should provide product database)
                 }
             });
             loginButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    LoginCredentials loginCredentials = new LoginCredentials();
+                    BuyerLoginCredentials loginCredentials = new BuyerLoginCredentials();
                     loginCredentials.setVisible(true);
                     dispose();
 
-                    // generate new frame here that gives the customer options
-                    // probably need to read from server (which should provide product database)
                 }
             });
 
@@ -139,7 +134,31 @@ public class Client extends JComponent implements Runnable {
             JPanel panel = new JPanel();
             panel.add(marketPlaceButton);
             panel.add(shopBySellerButton);
+            add(panel);
 
+            marketPlaceButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // generate new frame here that gives the corresponding options for the customer
+
+                    // maybe send prompt to server for the database and then read the database in:
+
+                }
+            });
+
+            shopBySellerButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // generate new frame here that gives the corresponding options for the customer
+
+                    // maybe send prompt to server for the database and then read the database in:
+
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
 
         }
     }
@@ -161,21 +180,19 @@ public class Client extends JComponent implements Runnable {
             createAccountButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    LoginCredentials loginCredentials = new LoginCredentials();
+                    SellerLoginCredentials loginCredentials = new SellerLoginCredentials();
                     loginCredentials.setVisible(true);
                     dispose();
 
-                    // generate new frame here that gives the seller options
                 }
             });
             loginButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    LoginCredentials loginCredentials = new LoginCredentials();
+                    SellerLoginCredentials loginCredentials = new SellerLoginCredentials();
                     loginCredentials.setVisible(true);
                     dispose();
 
-                    // generate new frame here that gives the seller options
                 }
             });
 
@@ -185,23 +202,23 @@ public class Client extends JComponent implements Runnable {
         }
     }
 
-    private static class LoginCredentials extends JFrame {
-        private JTextField usernameField;
+    private static class BuyerLoginCredentials extends JFrame {
+        private JTextField emailField;
         private JPasswordField passwordField;
         private JTextField nameField;
         private JTextField ageField;
         private JButton loginButton;
 
-        public LoginCredentials() {
+        public BuyerLoginCredentials() {
             super("Enter New Login Credentials");
-            usernameField = new JTextField(20);
+            emailField = new JTextField(20);
             passwordField = new JPasswordField(20);
             nameField = new JTextField(20);
             ageField = new JTextField(3);
             loginButton = new JButton("Enter");
             JPanel panel = new JPanel();
-            panel.add(new JLabel("Username:"));
-            panel.add(usernameField);
+            panel.add(new JLabel("Email:"));
+            panel.add(emailField);
             panel.add(new JLabel("Password:"));
             panel.add(passwordField);
             panel.add(new JLabel("Name:"));
@@ -214,14 +231,22 @@ public class Client extends JComponent implements Runnable {
             loginButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    // write login information to the server here
                     try {
-                        dos.writeUTF(usernameField.getText() + ", " + passwordField.getPassword() + ", " + nameField.getText() + ", " + ageField.getText());
+                        dos.writeUTF("sendLogin\n");
+                        // write email here
+                        dos.writeUTF(emailField.getText());
+
+                        // User current = dis.read(); //read user
+                        // maybe pass the User as an argument to the BuyerGUI class, so we can use it in marketplace
+
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
 
+                    BuyerGUI buyerGUI = new BuyerGUI();
+                    buyerGUI.setVisible(true);
                     dispose();
+
 
                 }
             });
@@ -232,30 +257,59 @@ public class Client extends JComponent implements Runnable {
         }
     }
 
-    private static class LoginFrame extends JFrame {
-        private JTextField usernameField;
+    private static class SellerLoginCredentials extends JFrame {
+        private JTextField emailField;
         private JPasswordField passwordField;
-        private JButton submitButton;
+        private JTextField nameField;
+        private JTextField ageField;
+        private JButton loginButton;
 
-        public LoginFrame(String title) {
-            super(title);
-            usernameField = new JTextField(20);
+        public SellerLoginCredentials() {
+            super("Enter New Login Credentials");
+            emailField = new JTextField(20);
             passwordField = new JPasswordField(20);
-            submitButton = new JButton("Submit");
-            setLayout(new GridLayout(3, 2));
-            add(new JLabel("Username:"));
-            add(usernameField);
-            add(new JLabel("Password:"));
-            add(passwordField);
-        }
+            nameField = new JTextField(20);
+            ageField = new JTextField(3);
+            loginButton = new JButton("Enter");
+            JPanel panel = new JPanel();
+            panel.add(new JLabel("Email:"));
+            panel.add(emailField);
+            panel.add(new JLabel("Password:"));
+            panel.add(passwordField);
+            panel.add(new JLabel("Name:"));
+            panel.add(nameField);
+            panel.add(new JLabel("Age:"));
+            panel.add(ageField);
+            panel.add(loginButton);
+            add(panel);
 
-        public void addLoginForm() {
-            add(submitButton);
-            submitButton.addActionListener(new ActionListener() {
+            loginButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
-                    // Perform login action here
+                    try {
+                        dos.writeUTF("sendLogin\n");
+                        // write email here
+                        dos.writeUTF(emailField.getText());
+
+                        // User current = dis.read(); //read user
+
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+
+                    // make this for seller:
+
+//                    BuyerGUI buyerGUI = new BuyerGUI();
+//                    buyerGUI.setVisible(true);
+//                    dispose();
+
+
                 }
             });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
         }
     }
 
