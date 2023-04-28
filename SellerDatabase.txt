@@ -1,0 +1,10 @@
+* 0
+* 0
++ last
+4, cjc, dkf, 343, 23.00, 0
++ NEWest
+2, chrome, green, 4545, 69.00, 0
++ blank
+3, idfjdijd, oko, 22, 34.00, 1
++ changeName
+1, carTest, gray, 10, 400.00, 1
