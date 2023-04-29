@@ -338,6 +338,7 @@ public class Client extends JComponent implements Runnable {
                     //buyer.addToShoppingCart(product1, store, quantity);
 
                     continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer);
+                    continueShoppingEtc.setVisible(true);
                     dispose();
 
                 }
@@ -377,6 +378,7 @@ public class Client extends JComponent implements Runnable {
                     //buyer.buyProduct(product1, numProductsForPurchase, store, database);
 
                     continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer);
+                    continueShoppingEtc.setVisible(true);
                     dispose();
 
                 }
@@ -433,7 +435,8 @@ public class Client extends JComponent implements Runnable {
             viewCartButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    // JFrame for cart here:
+                    buyerCart buyerCart = new buyerCart(buyer);
+                    buyerCart.setVisible(true);
 
                 }
             });
@@ -441,7 +444,13 @@ public class Client extends JComponent implements Runnable {
             viewPurchasesButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    // JFrame or JOptionPane for purchases here
+                    String purchasesString = "";
+                    for (ProductPurchase productPurchase : buyer.getPurchases()) {
+                        purchasesString = purchasesString + productPurchase.getName() + " " + productPurchase.getPrice() + "\n";
+                    }
+
+                    JOptionPane.showMessageDialog(null, purchasesString,
+                            "Your Purchases", JOptionPane.INFORMATION_MESSAGE);
 
                 }
             });
@@ -513,9 +522,17 @@ public class Client extends JComponent implements Runnable {
                         // this is here for now just to be able to construct the framework but replace with reading database from server later
                         database = buyer.readSellerDatabase();
                     } catch (NoSellers ex) {
-                        JOptionPane.showMessageDialog(null, "No Sellers Exist Yet; You will be unable to shop!",
-                                "No Sellers!", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "There is nothing in your cart!",
+                                "Nothing in cart!", JOptionPane.INFORMATION_MESSAGE);
                     }
+                    int result = 0;
+                    do {
+                        result = buyer.purchaseCart(database);
+                    } while (result == 1);
+
+                    comboBox.removeAll();
+                    dispose();
+
 
                 }
             });
@@ -529,7 +546,9 @@ public class Client extends JComponent implements Runnable {
                 }
             });
 
-
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
         }
     }
 
