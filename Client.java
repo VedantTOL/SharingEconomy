@@ -125,11 +125,13 @@ public class Client extends JComponent implements Runnable {
     private static class BuyerGUI extends JFrame {
         private JButton marketPlaceButton;
         private JButton shopBySellerButton;
+        private User user;
 
-        public BuyerGUI() {
+        public BuyerGUI(User user) {
             super("Would you like to view the whole marketplace or shop by seller?");
             marketPlaceButton = new JButton("View the whole marketplace");
             shopBySellerButton = new JButton("Shop by seller");
+            this.user = user;
 
             JPanel panel = new JPanel();
             panel.add(marketPlaceButton);
@@ -139,9 +141,22 @@ public class Client extends JComponent implements Runnable {
             marketPlaceButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    // generate new frame here that gives the corresponding options for the customer
-
+                    // asking for balance before creating buyer object
+                    String bal = JOptionPane.showInputDialog(null, "What is your budget?",
+                            "Budget Information", JOptionPane.QUESTION_MESSAGE);
+                    
+                    double balance = Double.parseDouble(bal);
+                    
+                    // creating buyer object from user data that was generated in the login frame
+                    Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                            user.getAge(), balance);
+                    
+                    
                     // maybe send prompt to server for the database and then read the database in:
+//                    dos.writeUTF();
+//                    dis.readUTF();
+                    
+                    // generate new marketplace JFrame here to show what is in the marketplace
 
                 }
             });
@@ -149,10 +164,22 @@ public class Client extends JComponent implements Runnable {
             shopBySellerButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    // generate new frame here that gives the corresponding options for the customer
+                    // asking for balance before creating buyer object
+                    String bal = JOptionPane.showInputDialog(null, "What is your budget?",
+                            "Budget Information", JOptionPane.QUESTION_MESSAGE);
+
+                    double balance = Double.parseDouble(bal);
+
+                    // creating buyer object from user data that was generated in the login frame
+                    Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                            user.getAge(), balance);
 
                     // maybe send prompt to server for the database and then read the database in:
-
+//                    dos.writeUTF();
+//                    dis.readUTF();
+                    
+                    // generate new shop by seller Jframe here to allow the buyer to search for a seller
+                    
                 }
             });
 
@@ -160,6 +187,33 @@ public class Client extends JComponent implements Runnable {
             pack();
             setLocationRelativeTo(null);
 
+        }
+    }
+    
+    private static class marketPlace extends JFrame {
+        private JButton viewAllProductsButton;
+        private JButton searchForProductsButton;
+        private Buyer buyer;
+        
+        public marketPlace(Buyer buyer) {
+            super("View all products or search for a specific product?");
+            viewAllProductsButton = new JButton("View all products");
+            searchForProductsButton = new JButton("Search for a specific product");
+            this.buyer = buyer;
+
+            JPanel panel = new JPanel();
+            panel.add(viewAllProductsButton);
+            panel.add(searchForProductsButton);
+            add(panel);
+
+            viewAllProductsButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    
+                    
+
+                }
+            });
         }
     }
 
@@ -231,19 +285,21 @@ public class Client extends JComponent implements Runnable {
             loginButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    User user = null;
                     try {
                         dos.writeUTF("sendLogin\n");
                         // write email here
                         dos.writeUTF(emailField.getText());
 
                         // User current = dis.read(); //read user
+                        user = new User();
                         // maybe pass the User as an argument to the BuyerGUI class, so we can use it in marketplace
 
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
 
-                    BuyerGUI buyerGUI = new BuyerGUI();
+                    BuyerGUI buyerGUI = new BuyerGUI(user);
                     buyerGUI.setVisible(true);
                     dispose();
 
