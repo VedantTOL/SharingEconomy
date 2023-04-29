@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 
 public class Client extends JComponent implements Runnable {
 
@@ -144,19 +145,23 @@ public class Client extends JComponent implements Runnable {
                     // asking for balance before creating buyer object
                     String bal = JOptionPane.showInputDialog(null, "What is your budget?",
                             "Budget Information", JOptionPane.QUESTION_MESSAGE);
-                    
+
                     double balance = Double.parseDouble(bal);
-                    
+
                     // creating buyer object from user data that was generated in the login frame
                     Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
                             user.getAge(), balance);
-                    
-                    
+
+
                     // maybe send prompt to server for the database and then read the database in:
 //                    dos.writeUTF();
 //                    dis.readUTF();
-                    
+
                     // generate new marketplace JFrame here to show what is in the marketplace
+                    marketPlace marketPlace = new marketPlace(buyer);
+                    marketPlace.setVisible(true);
+                    dispose();
+
 
                 }
             });
@@ -177,9 +182,9 @@ public class Client extends JComponent implements Runnable {
                     // maybe send prompt to server for the database and then read the database in:
 //                    dos.writeUTF();
 //                    dis.readUTF();
-                    
+
                     // generate new shop by seller Jframe here to allow the buyer to search for a seller
-                    
+
                 }
             });
 
@@ -189,12 +194,12 @@ public class Client extends JComponent implements Runnable {
 
         }
     }
-    
+
     private static class marketPlace extends JFrame {
         private JButton viewAllProductsButton;
         private JButton searchForProductsButton;
         private Buyer buyer;
-        
+
         public marketPlace(Buyer buyer) {
             super("View all products or search for a specific product?");
             viewAllProductsButton = new JButton("View all products");
@@ -209,11 +214,322 @@ public class Client extends JComponent implements Runnable {
             viewAllProductsButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    
-                    
+                    // read database in to here:
+                    ArrayList<Seller> database = null;
+                    try {
+                        // this is here for now just to be able to construct the framework but replace with reading database from server later
+                        database = buyer.readSellerDatabase();
+                    } catch (NoSellers ex) {
+                        JOptionPane.showMessageDialog(null, "No Sellers Exist Yet; You will be unable to shop!",
+                                "No Sellers!", JOptionPane.INFORMATION_MESSAGE);
+                    }
+
+                    int choice = 1;
+
+                    ArrayList<Product> productList = buyer.viewMarketPlace(choice, database);
+                    if (productList == null) {
+                        JOptionPane.showMessageDialog(null, "Sorry! Sellers have not yet posted anything to the marketplace.\n" +
+                                        "Come back later when sellers have stocked their stores!\n" + "Logging you out...\n",
+                                "Empty Marketplace!", JOptionPane.INFORMATION_MESSAGE);
+                        dispose();
+                    } else {
+                        addToCartOrPurchase addToCartOrPurchase = new addToCartOrPurchase(productList, buyer);
+                        addToCartOrPurchase.setVisible(true);
+                        dispose();
+                    }
+
+
 
                 }
             });
+
+            searchForProductsButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // read database in to here:
+                    ArrayList<Seller> database = null;
+                    try {
+                        // this is here for now just to be able to construct the framework but replace with reading database from server later
+                        database = buyer.readSellerDatabase();
+                    } catch (NoSellers ex) {
+                        JOptionPane.showMessageDialog(null, "No Sellers Exist Yet; You will be unable to shop!",
+                                "No Sellers!", JOptionPane.INFORMATION_MESSAGE);
+                    }
+
+                    int choice = 2;
+
+                    ArrayList<Product> productList = buyer.viewMarketPlace(choice, database);
+                    if (productList == null) {
+                        JOptionPane.showMessageDialog(null, "Sorry! Sellers have not yet posted anything to the marketplace.\n" +
+                                        "Come back later when sellers have stocked their stores!\n" + "Logging you out...\n",
+                                "Empty Marketplace!", JOptionPane.INFORMATION_MESSAGE);
+                        dispose();
+                    } else {
+                        addToCartOrPurchase addToCartOrPurchase = new addToCartOrPurchase(productList, buyer);
+                        addToCartOrPurchase.setVisible(true);
+                        dispose();
+                    }
+
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+
+        }
+    }
+
+    private static class addToCartOrPurchase extends JFrame {
+        private JButton addToCartButton;
+        private JButton purchaseNowButton;
+        private JButton previousPageButton;
+        private JComboBox<String> comboBox;
+
+        public addToCartOrPurchase(ArrayList<Product> productList, Buyer buyer) {
+            super("Available Products");
+            addToCartButton = new JButton("Add to cart");
+            purchaseNowButton = new JButton("Purchase now");
+            previousPageButton = new JButton("Previous page");
+            comboBox = new JComboBox<>();
+
+            for (Product product : productList) {
+                comboBox.addItem(product.marketplaceString());
+            }
+
+            JPanel panel = new JPanel();
+            panel.add(addToCartButton);
+            panel.add(purchaseNowButton);
+            panel.add(previousPageButton);
+            panel.add(comboBox);
+            add(panel);
+
+            addToCartButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String selectedItem = (String) comboBox.getSelectedItem();
+
+                    Product product1 = null;
+                    for (Product product : productList) {
+                        if (selectedItem.equals(product.marketplaceString())) {
+                            product1 = product;
+                        }
+                    }
+
+                    // read database from server here:
+                    // Store store = buyer.viewStore(product1, database);
+
+                    int quantity;
+                    String quantityForCart;
+                    do {
+                        do {
+                            quantityForCart = JOptionPane.showInputDialog(null,
+                                    "How many of " + product1.getName() + " would you like to add?\n",
+                                    "Add to Cart", JOptionPane.QUESTION_MESSAGE);
+                            if (quantityForCart == null || quantityForCart.isEmpty()) {
+                                JOptionPane.showMessageDialog(null, "Please enter a number before continuing!",
+                                        "ERROR!", JOptionPane.ERROR_MESSAGE);
+                            }
+                        } while (quantityForCart == null || quantityForCart.isEmpty());
+
+                        quantity = readInt(quantityForCart);
+                    } while (quantity == -1);
+
+                    //buyer.addToShoppingCart(product1, store, quantity);
+
+                    continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer);
+                    dispose();
+
+                }
+            });
+
+            purchaseNowButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String selectedItem = (String) comboBox.getSelectedItem();
+
+                    Product product1 = null;
+                    for (Product product : productList) {
+                        if (selectedItem.equals(product.marketplaceString())) {
+                            product1 = product;
+                        }
+                    }
+
+                    // read database from server here:
+                    // Store store = buyer.viewStore(product1, database);
+
+                    int numProductsForPurchase;
+                    String numProductsForPurchases;
+                    do {
+                        do {
+                            numProductsForPurchases = JOptionPane.showInputDialog(null,
+                                    "How many of " + product1.getName() + " would you like to purchase?\n",
+                                    "Purchase now", JOptionPane.QUESTION_MESSAGE);
+                            if (numProductsForPurchases == null || numProductsForPurchases.isEmpty()) {
+                                JOptionPane.showMessageDialog(null, "Please enter an option before continuing!",
+                                        "ERROR!", JOptionPane.ERROR_MESSAGE);
+                            }
+                        } while (numProductsForPurchases == null || numProductsForPurchases.isEmpty());
+
+                        numProductsForPurchase = readInt(numProductsForPurchases);
+                    } while (numProductsForPurchase == -1);
+
+                    //buyer.buyProduct(product1, numProductsForPurchase, store, database);
+
+                    continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer);
+                    dispose();
+
+                }
+            });
+
+            previousPageButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    marketPlace marketPlace = new marketPlace(buyer);
+                    marketPlace.setVisible(true);
+                    dispose();
+
+
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+
+        }
+    }
+
+    private static class continueShoppingEtc extends JFrame {
+        private JButton continueShoppingButton;
+        private JButton viewCartButton;
+        private JButton viewPurchasesButton;
+        private JButton logOutButton;
+
+        public continueShoppingEtc(Buyer buyer) {
+            super("Continue Shopping?");
+            continueShoppingButton = new JButton("Continue shopping: Marketplace menu");
+            viewCartButton = new JButton("View your cart");
+            viewPurchasesButton = new JButton("View your purchases");
+            logOutButton = new JButton("Log Out");
+
+            JPanel panel = new JPanel();
+            panel.add(continueShoppingButton);
+            panel.add(viewCartButton);
+            panel.add(viewPurchasesButton);
+            panel.add(logOutButton);
+            add(panel);
+
+            continueShoppingButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    marketPlace marketPlace = new marketPlace(buyer);
+                    marketPlace.setVisible(true);
+                    dispose();
+                }
+            });
+
+            viewCartButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // JFrame for cart here:
+
+                }
+            });
+
+            viewPurchasesButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // JFrame or JOptionPane for purchases here
+
+                }
+            });
+
+            logOutButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // maybe some kind of method here that writes all changes to the database (may not be needed)
+                    JOptionPane.showMessageDialog(null, "Thank you, come again!",
+                            "Seeya!", JOptionPane.INFORMATION_MESSAGE);
+
+                    dispose();
+
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+
+        }
+    }
+
+    private static class buyerCart extends JFrame {
+        private JButton removeItemButton;
+        private JButton purchaseCartButton;
+        private JButton previousPageButton;
+        private JComboBox<String> comboBox;
+
+        public buyerCart(Buyer buyer) {
+            super("Your Shopping Cart");
+            removeItemButton = new JButton("Remove item");
+            purchaseCartButton = new JButton("Purchase cart");
+            previousPageButton = new JButton("Previous page");
+            comboBox = new JComboBox<>();
+
+            for (ProductPurchase product : buyer.getShoppingCart()) {
+                comboBox.addItem(product.toString());
+            }
+
+            JPanel panel = new JPanel();
+            panel.add(removeItemButton);
+            panel.add(purchaseCartButton);
+            panel.add(previousPageButton);
+            panel.add(comboBox);
+            add(panel);
+
+            removeItemButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String selectedItem = (String) comboBox.getSelectedItem();
+
+                    for (ProductPurchase product : buyer.getShoppingCart()) {
+                        if (selectedItem.equals(product.toString())) {
+                            buyer.removeFromShoppingCart(product);
+                            comboBox.removeItem(selectedItem);
+                        }
+                    }
+
+                }
+            });
+
+            purchaseCartButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // read database in to here:
+                    ArrayList<Seller> database = null;
+                    try {
+                        // this is here for now just to be able to construct the framework but replace with reading database from server later
+                        database = buyer.readSellerDatabase();
+                    } catch (NoSellers ex) {
+                        JOptionPane.showMessageDialog(null, "No Sellers Exist Yet; You will be unable to shop!",
+                                "No Sellers!", JOptionPane.INFORMATION_MESSAGE);
+                    }
+
+                }
+            });
+
+            previousPageButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    dispose();
+
+                }
+            });
+
+
         }
     }
 
@@ -240,6 +556,7 @@ public class Client extends JComponent implements Runnable {
 
                 }
             });
+
             loginButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -366,6 +683,18 @@ public class Client extends JComponent implements Runnable {
             setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             pack();
             setLocationRelativeTo(null);
+        }
+    }
+
+    public static int readInt(String input) {
+        int result;
+        try {
+            result = Integer.parseInt(input);
+            return result;
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Please enter a valid Integer!",
+                    "ERROR!", JOptionPane.ERROR_MESSAGE);
+            return -1;
         }
     }
 
