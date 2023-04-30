@@ -153,9 +153,7 @@ public class Client extends JComponent implements Runnable {
                             user.getAge(), balance);
 
 
-                    // maybe send prompt to server for the database and then read the database in:
-//                    dos.writeUTF();
-//                    dis.readUTF();
+                   
 
                     // generate new marketplace JFrame here to show what is in the marketplace
                     marketPlace marketPlace = new marketPlace(buyer);
@@ -179,9 +177,7 @@ public class Client extends JComponent implements Runnable {
                     Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
                             user.getAge(), balance);
 
-                    // maybe send prompt to server for the database and then read the database in:
-//                    dos.writeUTF();
-//                    dis.readUTF();
+                 
 
                     // generate new shop by seller Jframe here to allow the buyer to search for a seller
 
@@ -237,8 +233,6 @@ public class Client extends JComponent implements Runnable {
                         addToCartOrPurchase.setVisible(true);
                         dispose();
                     }
-
-
 
                 }
             });
