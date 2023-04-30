@@ -5,6 +5,8 @@ import java.net.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class Client_new extends JComponent implements Runnable {
 
@@ -1183,32 +1185,220 @@ public class Client_new extends JComponent implements Runnable {
         }
 
     }
-    private static class viewStatistics extends JFrame {
-        public viewStatistics(Seller seller, User user) {
 
-            super("How would you like to view the statistics?");
+    public viewStatistics(Seller seller, User user) {
 
-            JButton customerStat = new JButton("1. By Customer");
-            JButton storeStat = new JButton("2. By Store");
-            JButton productStat = new JButton("3. All Products");
-            JButton mainMenu = new JButton("4. Return to main menu");
+        super("How would you like to view the statistics?");
 
-            JPanel buttonPanel = new JPanel();
-            buttonPanel.add(customerStat);
-            buttonPanel.add(storeStat);
-            buttonPanel.add(productStat);
-            buttonPanel.add(mainMenu);
+        JButton customerStat = new JButton("1. By Customer");
+        JButton storeStat = new JButton("2. By Store");
+        JButton productStat = new JButton("3. All Products");
+        JButton mainMenu = new JButton("4. Return to main menu");
 
-            customerStat.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(customerStat);
+        buttonPanel.add(storeStat);
+        buttonPanel.add(productStat);
+        buttonPanel.add(mainMenu);
 
+        customerStat.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
 
+                ArrayList<Buyer> customers = new ArrayList<Buyer>();
+                Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                        user.getAge(), balance);
 
-                });
+                if (customers.contains(buyer)) {
+                    String message = String.format("Customer Name: %s\nItems Purchased: %d\nTotal Value (with current prices): %.2f\n\nItems In Cart: %d\nPotential Revenue: %.2f",
+                            buyer.getName(), itemsPurchased, totalSpent, itemsInCart, potentialSpending);
+                    JOptionPane.showMessageDialog(null, message);
+                } else if (customers.size() == 0) {
+                    JOptionPane.showMessageDialog(null, "No one has purchased your products yet!");
                 }
             }
+        });
+
+
+        storeStat.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+                Client.viewStatistics.storeStat storeStat = new Client.viewStatistics.storeStat();
+            }
+        });
+
+
+        productStat.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+                Client.viewStatistics.productStat productStat = new Client.viewStatistics.productStat();
+
+            }
+        });
+
+
+        mainMenu.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+                JOptionPane.showMessageDialog("Goodbye");
+
+            }
+        });
+
+    }
+
+    private static class storeStat extends JFrame {
+
+        public storeStat(Seller seller) {
+
+            super("How would you like to sort??");
+            Product productEdit = null;
+
+            JButton qtyButton = new JButton("1. Qauntity Sold");
+            JButton revButton = new JButton("2. Total Revenue");
+            JButton stockButton = new JButton("3. Stock remaining");
+
+            JPanel buttonPanel = new JPanel();
+            buttonPanel.add(qtyButton);
+            buttonPanel.add(revButton);
+            buttonPanel.add(stockButton);
+
+            qtyButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+
+                    //collections part needs to be fixed
+
+                    Collections.sort(storeStat, Comparator.comparingInt(Store::getTotalQuantitySold).reversed());
+                    int i = 1;
+                    for (Store store : storeStat) {
+                        System.out.printf("%d. %s\n", i, store.getStoreName());
+                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                        i++;
+                    }
+
+                }
+            });
+
+            revButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+
+                    //collections part needs to be fixed
+
+                    Collections.sort(storeStat, Comparator.comparingDouble(Store::getTotalValueSold).reversed());
+                    int i = 1;
+                    for (Store store : storeStat) {
+                        System.out.printf("%d. %s\n", i, store.getStoreName());
+                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                        i++;
+                    }
+
+                }
+            });
+
+
+            stockButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+
+                    //collections part needs to be fixed
+
+                    Collections.sort(storeStat, Comparator.comparingInt(Store::getStockRemaining).reversed());
+                    int i = 1;
+                    for (Store store : storeStat) {
+                        System.out.printf("%d. %s\n", i, store.getStoreName());
+                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                        i++;
+                    }
+
+                }
+            });
         }
     }
+
+
+    private static class productStat extends JFrame {
+
+        public productStat(Seller seller) {
+
+            super("How would you like to sort??");
+            Product productEdit = null;
+
+            JButton qtyButton = new JButton("1. Qauntity Sold");
+            JButton revButton = new JButton("2. Total Revenue");
+            JButton stockButton = new JButton("3. Stock remaining");
+
+            JPanel buttonPanel = new JPanel();
+            buttonPanel.add(qtyButton);
+            buttonPanel.add(revButton);
+            buttonPanel.add(stockButton);
+
+            qtyButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+
+                    //collections part needs to be fixed
+
+                    Collections.sort(productStat, Comparator.comparingInt(Product::getQuantitySold).reversed());
+                    int i = 1;
+                    for (Store store : storeStat) {
+                        System.out.printf("%d. %s\n", i, store.getStoreName());
+                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                        i++;
+                    }
+
+                }
+            });
+
+            revButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+
+                    //collections part needs to be fixed
+
+                    Collections.sort(productStat, Comparator.comparingDouble(Product::getValueSold).reversed());
+                    int i = 1;
+                    for (Store store : storeStat) {
+                        System.out.printf("%d. %s\n", i, store.getStoreName());
+                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                        i++;
+                    }
+
+                }
+            });
+
+
+            stockButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+
+                    //collections part needs to be fixed
+
+                    Collections.sort(productStat, Comparator.comparingInt(Product::getQuantityForPurchase).reversed());
+                    int i = 1;
+                    for (Store store : storeStat) {
+                        System.out.printf("%d. %s\n", i, store.getStoreName());
+                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
+                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
+                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
+                        i++;
+                    }
+
+                }
+            });
+        }
+
+
+    }
 }
+    
+
+    
+    
+
 
 
