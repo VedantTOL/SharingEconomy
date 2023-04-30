@@ -14,7 +14,6 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = new ServerSocket(4242);
-        serverSocket.setReuseAddress(true);
 
         while (true) {
 
@@ -32,7 +31,6 @@ public class Server {
                 Thread t = new ClientHandler(dis, dos, socket);
 
                 t.start();
-                System.out.println("Thread created");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -48,9 +46,9 @@ class ClientHandler extends Thread {
     final Socket socket;
 
 
-    ClientHandler(DataInputStream input, DataOutputStream output, Socket socket) throws IOException {
-        this.input = new DataInputStream(socket.getInputStream());
-        this.output = new DataOutputStream(socket.getOutputStream());
+    ClientHandler(DataInputStream input, DataOutputStream output, Socket socket) {
+        this.input = input;
+        this.output = output;
         this.socket = socket;
     }
 
@@ -65,23 +63,18 @@ class ClientHandler extends Thread {
         ClientHandler server = new ClientHandler();
 
         try {
-
             boolean newWrite = false;
             ArrayList<Seller> sellerDatabase = readSellerDatabase();
             ArrayList<Buyer> buyerDatabase = readBuyerDatabase();
             ArrayList<Product> productDatabase = getProductDatabase(sellerDatabase);
             ArrayList<User> loginDatabase;
 
-
-            System.out.println("check");
             BufferedReader bfr = new BufferedReader(new InputStreamReader(input));
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(output));
             String action;
             String data = "";
-
-            boolean isSeller = Boolean.parseBoolean(bfr.readLine());
-
-
+            String sellerCheck = bfr.readLine();
+            boolean isSeller = sellerCheck.equals("seller");
             while (true) {
                 data = "";
                 action = bfr.readLine();
@@ -148,11 +141,12 @@ class ClientHandler extends Thread {
                     newWrite = true;
                 }
             }
-
-            } catch (IOException | DataFormatException e) {
-                e.printStackTrace();
-            }
+        } catch (IOException | DataFormatException e) {
+            e.printStackTrace();
         }
+
+
+    }
 
     public static ArrayList<String> parseServer(BufferedReader bfr) throws IOException {
         ArrayList<String> data = new ArrayList<String>();
@@ -552,9 +546,9 @@ class ClientHandler extends Thread {
         this.loginDetails = loginDetails;
     }
 
+
     private ArrayList<Seller> sellerDatabase;
     private ArrayList<Buyer> buyerDatabase;
     private User loginDetails;
 
 }
-

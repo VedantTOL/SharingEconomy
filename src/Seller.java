@@ -154,7 +154,7 @@ public class Seller extends User {
         int decision;
         ArrayList<Seller> updateDatabase = null;
         try {
-             updateDatabase = readSellerDatabase();
+            updateDatabase = readSellerDatabase();
         } catch (NoSellers e) {
             newSeller = true;
         }
@@ -172,15 +172,28 @@ public class Seller extends User {
 
         while (!quit) {
             while (true) {
+                int sort;
+                String sorting;
                 //writeToDatabase(true, updateDatabase);
-                System.out.println("What actions would you like to take?\n" +
-                        "1. Add store\n" +
-                        "2. Delete" +
-                        " store\n" +
-                        "3. Edit store\n" +
-                        "4. View statistics\n" +
-                        "5. Edit account\n" +
-                        "6. Delete account\n7. Logout");
+                do {
+                    do {
+                        sorting = JOptionPane.showInputDialog(null, "What actions would you like to take?\n" +
+                                "1. Add store\n" +
+                                "2. Delete store\n" +
+                                "3. Edit store\n" +
+                                "4. View statistics\n" +
+                                "5. Edit account\n" +
+                                "6. Delete account\n" +
+                                "7. Logout");
+                        if (sorting == null || sorting.isEmpty()) {
+                            JOptionPane.showMessageDialog(null, "Please enter an option before continuing!",
+                                    "ERROR!", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } while (sorting == null || sorting.isEmpty());
+
+                    sort = readInt(sorting);
+
+                } while (sort == -1 );
                 try {
                     decision = scanner.nextInt();
                     scanner.nextLine();
@@ -197,33 +210,23 @@ public class Seller extends User {
 
             if (decision == 1) { //Add store
                 ArrayList<Product> products = null;
-                System.out.println("What is the name of the store you want to add?");
-                String storeName = scanner.nextLine();
-
-                System.out.println("How many products do you want to add?");
-                int items = scanner.nextInt();
-                scanner.nextLine();
+                String storeName = JOptionPane.showInputDialog(null, "What is the name of the store you want to add?");
+                int items = Integer.parseInt(JOptionPane.showInputDialog(null, "How many products do you want to add?"));
 
                 products = addProducts(items, scanner);
 
                 Store store = new Store(storeName, products);
                 this.addStore(-1, store);
 
-                for (Iterator<Seller> it = updateDatabase.iterator(); it.hasNext(); ) {
-                    Seller seller = it.next();
-                    if (seller.getUniqueIdentifier() == this.getUniqueIdentifier()) {
-                        it.remove();
-                    }
-                }
-                updateDatabase.add(this);
-                writeToDatabase(false, updateDatabase); //
+                updateDatabase.add(this.getSellerIndex(), this);
+
+                writeToDatabase(false, updateDatabase);
             } else if (decision == 2) {//Delete Store
                 int i = 1;
 
-                if(this.getStores().size()==0) {
+                if (this.getStores().size() == 0) {
                     System.out.println("You have no stores, please add one!");
-                }
-                else {
+                } else {
 
                     for (Store store : this.getStores()) {
                         System.out.printf("%d: %s\n", i, store.getStoreName());
@@ -238,31 +241,29 @@ public class Seller extends User {
                         if (toDelete != -1) {
                             this.getStores().remove(toDelete - 1);
                             System.out.println("Store successfully deleted!");
+                            updateDatabase.set(this.getSellerIndex(), this);
                             break;
                         }
                     }
                 }
-                updateDatabase.set(this.getSellerIndex(), this);
                 writeToDatabase(false, updateDatabase);
             } else if (decision == 3) { // Edit Store
                 Store edit = null;
                 int i = 1;
 
-                if(this.getStores().size()==0) {
-                    System.out.println("You have no stores, please add one!");
-                }
-
-                else {
-
+                if (this.getStores().size() == 0) {
+                    JOptionPane.showMessageDialog(null, "You have no stores, please add one!");
+                } else {
+                    String storesList = "";
                     for (Store store : this.getStores()) {
-                        System.out.printf("%d: %s\n", i, store.getStoreName());
+                        storesList += i + ": " + store.getStoreName() + "\n";
                         i++;
                     }
+                    JOptionPane.showMessageDialog(null, storesList);
 
                     while (true) {
-                        System.out.println("Enter the store index you want to edit: ");
-                        String storeNameToDelete = scanner.nextLine();
-                        int toEdit = readInt(storeNameToDelete);
+                        String storeIndex = JOptionPane.showInputDialog("Enter the store index you want to edit: ");
+                        int toEdit = readInt(storeIndex);
                         if (toEdit != -1) {
                             edit = this.getStores().get(toEdit - 1);
                             this.getStores().remove(toEdit - 1);
@@ -272,51 +273,62 @@ public class Seller extends User {
                 }
 
                 while (true) {
-                    System.out.printf("What would you like to change about %s\n", edit.getStoreName());
-                    System.out.println("1. Store Name");
-                    System.out.println("2. Add Products");
-                    System.out.println("3. Edit Products");
-                    System.out.println("4. Delete Products");
-
-                    String option = scanner.nextLine();
-                    int toEdit = readInt(option);
+                    String[] options = {"Store Name", "Add Products", "Edit Products", "Delete Products"};
+                    int toEdit = JOptionPane.showOptionDialog(null, "What would you like to change about " + edit.getStoreName() + "?",
+                            "Edit Store", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
                     if (toEdit != -1) {
-                        if (toEdit == 1) { //Store Name
+                        if (toEdit == 0) { // Store Name
                             while (true) {
-                                System.out.println("Enter the new name of the Store: ");
-                                String newName = scanner.nextLine();
-                                System.out.println("New store name printer successfully.");
-                                if (newName == null) {
-                                    System.out.println("Please enter a valid String (cannot be empty!)");
+                                String newName = JOptionPane.showInputDialog("Enter the new name of the Store: ");
+                                if (newName == null || newName.isEmpty()) {
+                                    JOptionPane.showMessageDialog(null, "Please enter a valid String (cannot be empty!)");
                                 } else {
                                     edit.setStoreName(newName);
+                                    JOptionPane.showMessageDialog(null, "New store name printed successfully.");
                                     break;
                                 }
                             }
                             this.getStores().add(edit);
-                        } else if (toEdit == 3) { // Edit Products
+                        } else if (toEdit == 2) { // Edit Products
                             Product productEdit = null;
                             int k = 1;
+                            String productsList = "";
                             for (Product product : edit.getProducts()) {
-                                System.out.printf("%d: %s\n", k, product.getName());
+                                productsList += k + ": " + product.getName() + "\n";
                                 k++;
                             }
+                            JOptionPane.showMessageDialog(null, productsList);
+
                             while (true) {
-                                System.out.println("Enter the product index you want to edit: ");
-                                String productToEdit = scanner.nextLine();
-                                int x = readInt(productToEdit);
+                                String productIndex = JOptionPane.showInputDialog("Enter the product index you want to edit: ");
+                                int x = readInt(productIndex);
                                 if (x != -1) {
                                     productEdit = edit.getProducts().get(x - 1);
                                     edit.getProducts().remove(x - 1);
                                     break;
                                 }
                             }
+
                             boolean exitCondition = true;
                             do {
-                                System.out.printf("What would you like to edit about %s\n", productEdit.getName());
-                                System.out.printf("1. Name\n2. Description\n3. Price\n4. Quantity For Purchase\n");
-                                int productChoice = readInt(scanner.nextLine());
+                                String[] productOptions = {"Name", "Description", "Price", "Quantity For Purchase"};
+                                int productChoice = JOptionPane.showOptionDialog(null,
+                                        "What would you like to edit about " + productEdit.getName() + "?", "Edit Product",
+                                        JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, productOptions, productOptions[0]);
+
                                 if (productChoice != -1) {
+                                    if (productChoice == 0) { // Name
+                                        while (true) {
+                                            String newName = JOptionPane.showInputDialog("Enter the new name of the Product: ");
+                                            if (newName == null || newName.isEmpty()) {
+                                                JOptionPane.showMessageDialog(null, "Please enter a valid String (cannot be empty!)");
+                                            } else {
+                                                productEdit.setName(newName);
+                                                JOptionPane.showMessageDialog(null, "Product name updated successfully!");
+                                                break;
+                                            }
+                                        }
+                                    }
                                     if (productChoice == 1) {
                                         while (true) {
                                             System.out.println("Enter the new name of the Product: ");
@@ -410,13 +422,11 @@ public class Seller extends User {
             } else if (decision == 5) {
                 this.changeAccount(scanner, true);
             } else if (decision == 6) {
-                boolean x = this.deleteAccount(scanner, true);
-                if (x) {
-                    System.out.println("Logging you out...");
-                    return;
-                }
+                this.deleteAccount(scanner, true);
+                System.out.println("Logging you out...");
+                return;
             } else if (decision == 7) {
-                System.out.println("Thank you for shopping with us!");
+                JOptionPane.showMessageDialog(null, "Thank you for shopping with us!");
                 return;
             }
         }

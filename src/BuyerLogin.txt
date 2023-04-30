@@ -1,0 +1,2 @@
+0, buyer@purdue, 1234, cash, 25
+1, buyer21@email, 1234, caro, 49

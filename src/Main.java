@@ -20,7 +20,7 @@ import java.util.Arrays;
 public class Main {
     public static final String EXIT = "Thank you! Please come again!"; //Displayed when user exits the program.
     public static final String INVALID_OPTION = "Please select a valid menu option!";
-    public static void main(String[] args) throws DataFormatException, IOException, UserDatabaseFormatError {
+    public static void main(String[] args) throws DataFormatException, IOException, UserDatabaseFormatError, NoSellers {
         User loginAccess = new User();
         User user = null;
         boolean isSeller = false;
