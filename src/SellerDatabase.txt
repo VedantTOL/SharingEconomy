@@ -1,10 +1,10 @@
 * 0
 + changeName
 1, carTest, gray, 11, 400.00, 0
-+ NEWest
-2, chrome, green, 4545, 69.00, 0
 + blank
-3, idfjdijd, oko, 23, 34.00, 0
-* 1
+3, idfjdijd, oko, 23, 34.00, 10
++ NEWest
+2, chrome, green, 4539, 69.00, 1
 + last
-4, cjc, dkf, 343, 23.00, 0
+4, cjc, dkf, 330, 23.00, 2
+* 0

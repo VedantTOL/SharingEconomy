@@ -30,5 +30,9 @@ public class ProductPurchase extends Product {
     public String toString() {
         return String.format("%d:%d", this.getUniqueID(), this.orderQuantity);
     }
+
+    public String viewOrder(){
+        return String.format("Product Name: %s Quantity: %d", this.getName(), this.orderQuantity);
+    }
 }
 
