@@ -107,20 +107,19 @@ class ClientHandler extends Thread {
                 } else if (action.equals("sendLogin")) {
                     //send login information
                     loginDatabase = getInformation(isSeller);
-                    bw.write("loginDatabase\n");
-                    bw.flush();
+
 
                     String email = bfr.readLine();
                     String password = bfr.readLine();
                     User user = null;
                     for (User parse : loginDatabase) {
-                        if (user.getEmail().equals(email)) {
+                        if (parse.getEmail().equals(email)) {
                             user = parse;
                             break;
                         }
                     }
                     if (user == null) {
-                        bw.write("noAccount\n");
+                        bw.write("loginError\n");
                         bw.flush();
                     } else {
                         if (user.getPassword().equals(password)) {
@@ -128,7 +127,7 @@ class ClientHandler extends Thread {
                             bw.write("\n");
                             bw.flush();
                         } else {
-                            bw.write("incorrectPassword");
+                            bw.write("loginError");
                         }
                     }
                     bw.flush();
@@ -142,7 +141,7 @@ class ClientHandler extends Thread {
                     bw.write("buyerDatabase\n");
                     bw.flush();
                     for (Buyer buyer : buyerDatabase) {
-                        data = data.concat(buyer.serverString());
+                        //data = data.concat(buyer.serverString());
                     }
                     bw.write(data);
                     bw.write("end\n");
@@ -531,7 +530,7 @@ class ClientHandler extends Thread {
         try {
             BufferedWriter toFile = new BufferedWriter(new FileWriter("./src/BuyerDatabase.txt"));
             for (Buyer buyer : buyerDatabase) {
-                toFile.write(buyer.serverString());
+                //toFile.write(buyer.serverString());
                 toFile.flush();
             }
             toFile.close();
