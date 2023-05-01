@@ -1,5 +1,3 @@
-import com.sun.tools.jconsole.JConsoleContext;
-
 import javax.swing.*;
 import java.io.IOException;
 import java.io.*;
@@ -9,9 +7,29 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Scanner;
+import java.util.zip.DataFormatException;
 
 public class Client extends JComponent implements Runnable {
+    public ArrayList<User> getLoginDatabase() {
+        return loginDatabase;
+    }
 
+    public void setLoginDatabase(ArrayList<User> loginDatabase) {
+        this.loginDatabase = loginDatabase;
+    }
+
+    private ArrayList<User> loginDatabase;
+
+    public int getUniqueID() {
+        return uniqueID;
+    }
+
+    public void setUniqueID(int uniqueID) {
+        this.uniqueID = uniqueID;
+    }
+
+    private int uniqueID;
     private static DataInputStream dis;
     private static DataOutputStream dos;
     private static Socket socket;
@@ -21,18 +39,310 @@ public class Client extends JComponent implements Runnable {
     private JButton exit;
     private JFrame frame;
 
+    public ArrayList<Seller> getSellerDatabase() {
+        return sellerDatabase;
+    }
 
+    public void setSellerDatabase(ArrayList<Seller> sellerDatabase) {
+        this.sellerDatabase = sellerDatabase;
+    }
+
+    public ArrayList<Buyer> getBuyerDatabase() {
+        return buyerDatabase;
+    }
+
+    public void setBuyerDatabase(ArrayList<Buyer> buyerDatabase) {
+        this.buyerDatabase = buyerDatabase;
+    }
+
+    public User getLoginDetails() {
+        return loginDetails;
+    }
+
+    public void setLoginDetails(User loginDetails) {
+        this.loginDetails = loginDetails;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public String[] getEmailPassword() {
+        return emailPassword;
+    }
+
+    public void setEmailPassword(String[] emailPassword) {
+        this.emailPassword = emailPassword;
+    }
+
+    private String[] emailPassword = new String[2];
+
+
+    public static ArrayList<String> parseServer(BufferedReader bfr) throws IOException {
+        ArrayList<String> data = new ArrayList<String>();
+        String line;
+        do {
+            line = bfr.readLine();
+            if (line == "" || line == null || line.equals("end")) {
+                break;
+            }
+            data.add(line);
+        } while (true);
+        return data;
+    }
+
+    public ArrayList<Seller> sellerServerRead(ArrayList<String> data) {
+        ArrayList<Seller> database = new ArrayList<Seller>();
+
+        //initializing iterating objects to use them outside the scope of try/catch;
+        Seller seller;
+        Store store;
+        Product product;
+
+        //used for indexing arraylists; incremented
+        int sellerIndex = -1;
+        int storeIndex = -1;
+        for (String line : data) {
+            if (line == null || line == "") {
+                break;
+            }
+
+            char identifier = line.charAt(0); //data processing
+
+            if (identifier == 42) {
+                storeIndex = -1;
+
+                seller = new Seller(Integer.parseInt(line.split(" ")[1]));
+                if (seller.getSellerIndex() != -1) {
+                    database.add(seller);
+                    sellerIndex = seller.getUniqueIdentifier();
+                }
+            } else if (identifier == 43) {
+                storeIndex++;
+                store = new Store(line.split(" ")[1]);
+                database.get(sellerIndex).addStore(storeIndex, store);
+            } else {
+                try {
+                    product = new Product(line.split(", "));
+                    database.get(sellerIndex).getStores().get(storeIndex).addProduct(product);
+                } catch (DataFormatException e) {
+                    System.out.println("Seller Database Malformed!");
+                }
+            }
+        }
+        return database;
+    }
+
+    public ArrayList<Buyer> buyerServerRead(ArrayList<String> data) {
+        ArrayList<Buyer> database = new ArrayList<Buyer>();
+        //ArrayList<Product> productDatabase = getProductDatabase();
+
+        //String line;
+        Buyer buyer = null;
+
+        for (String line : data) {
+            if (line == null || line == "") {
+                break;
+            }
+            char identifier = line.charAt(0);
+
+            if (identifier == '*') {
+                try {
+                    buyer = new Buyer(Integer.parseInt(line.split(" ")[1]));
+                    database.add(buyer);
+                } catch (NoAccountError e) {
+                    return null;
+                }
+
+            } else if (identifier == '+') {
+                try {
+                    line = line.substring(2);
+                } catch (StringIndexOutOfBoundsException e) {
+                    buyer.setShoppingCart(new ArrayList<ProductPurchase>());
+                }
+                if (line != "") {
+                    String[] cartList = line.split(", ");
+                    for (String productID : cartList) {
+                        try {
+                            int tempID = Integer.parseInt(productID.split(":")[0]);
+                            int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                            buyer.shoppingCart.add(new ProductPurchase(tempID, tempQuantity));
+                        } catch (NumberFormatException e) {
+                        }
+                    }
+                } else {
+                    buyer.setShoppingCart(new ArrayList<ProductPurchase>());
+                }
+
+            } else if (identifier == '-') {
+                try {
+                    line = line.substring(2);
+                } catch (StringIndexOutOfBoundsException e) {
+                    buyer.setPurchases(new ArrayList<ProductPurchase>());
+                }
+                if (line != "") {
+                    String[] purchasedList = line.split(", ");
+                    for (String productID : purchasedList) {
+                        try {
+                            int tempID = Integer.parseInt(productID.split(":")[0]);
+                            int tempQuantity = Integer.parseInt(productID.split(":")[1]);
+                            buyer.purchases.add(new ProductPurchase(tempID, tempQuantity));
+                        } catch (NumberFormatException e) {
+                        }
+                    }
+                } else {
+                    buyer.setPurchases(new ArrayList<ProductPurchase>());
+                }
+            }
+        }
+
+
+        return database;
+    }
+
+    public User getUserInfo(String data) {
+        return new User(data.split(", "));
+    }
+
+    public boolean sendServer(String option) throws IOException {
+        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+        String toServer = "";
+        User user;
+
+        if (option.equals("requestSellerDatabase")) {
+            dos.writeUTF("sendSeller\n");
+        } else if (option.equals("requestBuyerDatabase")) {
+            dos.writeUTF("sendBuyer\n");
+        } else if (option.equals("login")) {
+            dos.writeUTF("sendLogin\n");
+        } else if (option.equals("seller")) {
+            dos.writeUTF("true\n");
+        } else if (option.equals("buyer")) {
+            dos.writeUTF("false\n");
+        } else if (option.equals("updateBuyer")) {
+            dos.writeUTF("writeBuyer\n");
+        } else if (option.equals("updateSeller")) {
+            dos.writeUTF("writeSeller\n");
+        } else if (option.charAt(0) == '*') {
+            dos.writeUTF("loginDatabase\n");
+            bw.flush();
+            dos.writeUTF(option.substring(1, option.length() - 1));
+            dos.writeUTF("\n");
+            bw.flush();
+        } else if (option.charAt(0) == '-') {
+            dos.writeUTF("changeAccount\n");
+            bw.flush();
+        } else if (option.charAt(0) == '+') {
+            dos.writeUTF("deleteAccount\n");
+            bw.flush();
+        } else if (option.equals("addUser")) {
+            dos.writeUTF("getUniqueInt\n");
+            bw.flush();
+            setUniqueID(Integer.parseInt(bfr.readLine()));
+        } else if (option.equals("confirmUser")) {
+            dos.writeUTF("confirmUser\n");
+            bw.flush();
+            dos.writeUTF(loginDetails.constructorString());
+        }
+
+        bw.flush();
+
+        String action = bfr.readLine();
+
+        if (action.equals("sellerDatabase")) {
+            ArrayList<Seller> temp = this.sellerServerRead(parseServer(bfr));
+            this.setSellerDatabase(temp);
+        } else if (action.equals("buyerDatabase")) {
+            this.setBuyerDatabase(this.buyerServerRead(parseServer(bfr)));
+        } else if (action.equals("loginDatabase")) {
+            this.setLoginDetails(this.getUserInfo(bfr.readLine()));
+        } else if (action.equals("writeSeller")) {
+            dos.writeUTF("sellerDatabase\n");
+            bw.flush();
+            for (Seller seller : this.getSellerDatabase()) {
+                toServer = toServer.concat(seller.serverString());
+            }
+            dos.writeUTF(toServer);
+            dos.writeUTF("end\n");
+            bw.flush();
+        } else if (action.equals("sendLogin")) {
+            //send login information
+            dos.writeUTF(emailPassword[0]);
+            dos.writeUTF("\n");
+            bw.flush();
+            dos.writeUTF(emailPassword[1]);
+            dos.writeUTF("\n");
+            bw.flush();
+
+            String loginConfirmation = bfr.readLine();
+            if (loginConfirmation.equals("loginError")) {
+                return false;
+            } else {
+                setLoginDetails(new User(loginConfirmation.split(", ")));
+                return true;
+            }
+
+        } else if (action.equals("sendBuyer")) {
+            //send buyer information
+            dos.writeUTF("buyerDatabase\n");
+            bw.flush();
+            for (Buyer buyer : this.getBuyerDatabase()) {
+                toServer = toServer.concat(buyer.serverString());
+            }
+            dos.writeUTF(toServer);
+            dos.writeUTF("end\n");
+            bw.flush();
+        } else if (action.equals("changeAccount")) {
+            dos.writeUTF(option.substring(1, option.length() - 1));
+            bw.flush();
+        } else if (action.equals("deleteAccount")) {
+            dos.writeUTF(option.substring(1, option.length() - 1));
+            bw.flush();
+        }
+        return false;
+    }
+
+
+
+    private ArrayList<Seller> sellerDatabase;
+    private ArrayList<Buyer> buyerDatabase;
+    private User loginDetails;
+    User user = null;
+    private Client client;
+
+    public Client() throws IOException {
+        this.sellerDatabase = new ArrayList<Seller>();
+        this.buyerDatabase = new ArrayList<Buyer>();
+        this.loginDetails = new User();
+        this.client = this;
+    }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Client());
+        try {
+            SwingUtilities.invokeLater(new Client());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
+
+
 
     ActionListener actionListener = new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == customer) {
                 // creates new JFrame for a customer to log in
-                LoginOptionCustomer loginOptionCustomer = new LoginOptionCustomer();
+                try {
+                    dos.writeUTF("false\n");
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+                LoginOptionCustomer loginOptionCustomer = new LoginOptionCustomer(client);
                 loginOptionCustomer.pack();
                 loginOptionCustomer.setVisible(true);
                 frame.dispose();
@@ -40,17 +350,22 @@ public class Client extends JComponent implements Runnable {
                 frame.dispose();
             } else if (e.getSource() == seller) {
                 // creates new JFrame for a seller to log in
-                LoginOptionSeller loginOptionSeller = new LoginOptionSeller();
+                try {
+                    dos.writeUTF("false\n");
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+                LoginOptionSeller loginOptionSeller = new LoginOptionSeller(client);
                 loginOptionSeller.pack();
                 loginOptionSeller.setVisible(true);
                 frame.dispose();
             }
         }
+
     };
 
     @Override
     public void run() {
-
         try {
             socket = new Socket("localhost", 4242);
             dis = new DataInputStream(socket.getInputStream());
@@ -59,7 +374,6 @@ public class Client extends JComponent implements Runnable {
             JOptionPane.showMessageDialog(null, "Make sure the server is running before trying to connect!", "ERROR! Run Server!", JOptionPane.ERROR_MESSAGE);
             frame.dispose();
         }
-
         frame = new JFrame("Welcome! Please click the button according to your information!");
         Container content = frame.getContentPane();
         content.setLayout(new BorderLayout());
@@ -89,11 +403,13 @@ public class Client extends JComponent implements Runnable {
     }
 
     private static class LoginOptionCustomer extends JFrame {
+        private Client client;
         private JButton createAccountButton;
         private JButton loginButton;
 
-        public LoginOptionCustomer() {
+        public LoginOptionCustomer(Client client) {
             super("Login or Create Account");
+            this.client = client;
             createAccountButton = new JButton("Create Account");
             loginButton = new JButton("Login");
 
@@ -105,7 +421,7 @@ public class Client extends JComponent implements Runnable {
             createAccountButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    BuyerLoginCredentials loginCredentials = new BuyerLoginCredentials();
+                    BuyerCreateAccountCredentials loginCredentials = new BuyerCreateAccountCredentials(client);
                     loginCredentials.setVisible(true);
                     dispose();
 
@@ -114,7 +430,7 @@ public class Client extends JComponent implements Runnable {
             loginButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    BuyerLoginCredentials loginCredentials = new BuyerLoginCredentials();
+                    BuyerLoginCredentials loginCredentials = new BuyerLoginCredentials(client);
                     loginCredentials.setVisible(true);
                     dispose();
 
@@ -128,6 +444,7 @@ public class Client extends JComponent implements Runnable {
     }
 
     private static class BuyerGUI extends JFrame {
+        private Client client;
         private JButton marketPlaceButton;
         private JButton shopBySellerButton;
         private User user;
@@ -137,7 +454,7 @@ public class Client extends JComponent implements Runnable {
             marketPlaceButton = new JButton("View the whole marketplace");
             shopBySellerButton = new JButton("Shop by seller");
             this.user = user;
-
+            this.client = client;
             JPanel panel = new JPanel();
             panel.add(marketPlaceButton);
             panel.add(shopBySellerButton);
@@ -156,8 +473,9 @@ public class Client extends JComponent implements Runnable {
                     Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
                             user.getAge(), balance);
 
+
                     // generate new marketplace JFrame here to show what is in the marketplace
-                    marketPlace marketPlace = new marketPlace(buyer);
+                    marketPlace marketPlace = new marketPlace(buyer, client);
                     marketPlace.setVisible(true);
                     dispose();
 
@@ -178,10 +496,14 @@ public class Client extends JComponent implements Runnable {
                     Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
                             user.getAge(), balance);
 
+                    // generate list of sellers from database here:
+                    ArrayList<Seller> sellers = new ArrayList<>();
 
 
                     // generate new shop by seller Jframe here to allow the buyer to search for a seller
-
+                    shopBySeller bySeller = new shopBySeller(sellers, buyer, client);
+                    bySeller.setVisible(true);
+                    dispose();
                 }
             });
 
@@ -193,12 +515,14 @@ public class Client extends JComponent implements Runnable {
     }
 
     private static class marketPlace extends JFrame {
+        private Client client;
         private JButton viewAllProductsButton;
         private JButton searchForProductsButton;
         private Buyer buyer;
 
-        public marketPlace(Buyer buyer) {
+        public marketPlace(Buyer buyer, Client client) {
             super("View all products or search for a specific product?");
+            this.client = client;
             viewAllProductsButton = new JButton("View all products");
             searchForProductsButton = new JButton("Search for a specific product");
             this.buyer = buyer;
@@ -215,10 +539,13 @@ public class Client extends JComponent implements Runnable {
                     ArrayList<Seller> database = null;
                     try {
                         // this is here for now just to be able to construct the framework but replace with reading database from server later
-                        database = buyer.readSellerDatabase();
-                    } catch (NoSellers ex) {
-                        JOptionPane.showMessageDialog(null, "No Sellers Exist Yet; You will be unable to shop!",
-                                "No Sellers!", JOptionPane.INFORMATION_MESSAGE);
+                        client.sendServer("requestSellerDatabase");
+                        database = client.getSellerDatabase();
+                        //} //catch (NoSellers ex) {
+                        //JOptionPane.showMessageDialog(null, "No Sellers Exist Yet; You will be unable to shop!",
+                        //"No Sellers!", JOptionPane.INFORMATION_MESSAGE);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
                     }
 
                     int choice = 1;
@@ -230,7 +557,7 @@ public class Client extends JComponent implements Runnable {
                                 "Empty Marketplace!", JOptionPane.INFORMATION_MESSAGE);
                         dispose();
                     } else {
-                        addToCartOrPurchase addToCartOrPurchase = new addToCartOrPurchase(productList, buyer);
+                        addToCartOrPurchase addToCartOrPurchase = new addToCartOrPurchase(productList, buyer, client);
                         addToCartOrPurchase.setVisible(true);
                         dispose();
                     }
@@ -242,13 +569,14 @@ public class Client extends JComponent implements Runnable {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     // read database in to here:
-                    ArrayList<Seller> database = null;
+
+                    ArrayList<Seller> database;
                     try {
                         // this is here for now just to be able to construct the framework but replace with reading database from server later
-                        database = buyer.readSellerDatabase();
-                    } catch (NoSellers ex) {
-                        JOptionPane.showMessageDialog(null, "No Sellers Exist Yet; You will be unable to shop!",
-                                "No Sellers!", JOptionPane.INFORMATION_MESSAGE);
+                        client.sendServer("requestSellerDatabase");
+                        database = client.getSellerDatabase();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
                     }
 
                     int choice = 2;
@@ -260,7 +588,7 @@ public class Client extends JComponent implements Runnable {
                                 "Empty Marketplace!", JOptionPane.INFORMATION_MESSAGE);
                         dispose();
                     } else {
-                        addToCartOrPurchase addToCartOrPurchase = new addToCartOrPurchase(productList, buyer);
+                        addToCartOrPurchase addToCartOrPurchase = new addToCartOrPurchase(productList, buyer, client);
                         addToCartOrPurchase.setVisible(true);
                         dispose();
                     }
@@ -275,14 +603,73 @@ public class Client extends JComponent implements Runnable {
         }
     }
 
+    private static class shopBySeller extends JFrame {
+        private JComboBox<String> sellerComboBox;
+        private ArrayList<Seller> sellers;
+        private JButton selectSellerButton;
+        private Buyer buyer;
+        private Client client;
+
+
+        public shopBySeller(ArrayList<Seller> sellers, Buyer buyer, Client client) {
+            super("Select a Seller");
+            this.sellers = sellers;
+            this.buyer = buyer;
+            this.client = client;
+
+            // Create GUI components
+            sellerComboBox = new JComboBox<>();
+            for (Seller seller : sellers) {
+                sellerComboBox.addItem(seller.getName());
+            }
+
+            selectSellerButton = new JButton("Select");
+            JPanel panel = new JPanel();
+            panel.add(sellerComboBox);
+            panel.add(selectSellerButton);
+            add(panel);
+
+
+            selectSellerButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String selectedSeller = (String) sellerComboBox.getSelectedItem();
+
+                    ArrayList<Store> sellerStores = new ArrayList<>();
+                    for (Seller seller : sellers) {
+                        if (seller.getName().equals(selectedSeller)) {
+                            sellerStores = seller.getStores();
+                        }
+                    }
+
+                    ArrayList<Product> productList = new ArrayList<>();
+                    for (Store store : sellerStores) {
+                        productList.addAll(store.getProducts());
+                    }
+
+                    addToCartOrPurchase addToCartOrPurchase = new addToCartOrPurchase(productList, buyer, client);
+
+                }
+            });
+
+            // Set JFrame properties
+            setSize(400, 200);
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            setLocationRelativeTo(null);
+            setVisible(true);
+        }
+    }
+
     private static class addToCartOrPurchase extends JFrame {
+        private Client client;
         private JButton addToCartButton;
         private JButton purchaseNowButton;
         private JButton previousPageButton;
         private JComboBox<String> comboBox;
 
-        public addToCartOrPurchase(ArrayList<Product> productList, Buyer buyer) {
+        public addToCartOrPurchase(ArrayList<Product> productList, Buyer buyer, Client client) {
             super("Available Products");
+            this.client = client;
             addToCartButton = new JButton("Add to cart");
             purchaseNowButton = new JButton("Purchase now");
             previousPageButton = new JButton("Previous page");
@@ -312,7 +699,14 @@ public class Client extends JComponent implements Runnable {
                     }
 
                     // read database from server here:
-                    // Store store = buyer.viewStore(product1, database);
+                    ArrayList<Seller> database;
+                    try {
+                        client.sendServer("requestSellerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    database = client.getSellerDatabase();
+                    Store store = buyer.viewStore(product1, database);
 
                     int quantity;
                     String quantityForCart;
@@ -330,9 +724,31 @@ public class Client extends JComponent implements Runnable {
                         quantity = readInt(quantityForCart);
                     } while (quantity == -1);
 
-                    //buyer.addToShoppingCart(product1, store, quantity);
+                    try {
+                        client.sendServer("requestBuyerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
 
-                    continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer);
+                    ArrayList<Buyer> buyerDatabase = client.getBuyerDatabase();
+
+                    buyer.addToShoppingCart(product1, store, quantity);
+
+                    for (Buyer c : buyerDatabase) {
+                        if (c.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
+                            buyerDatabase.remove(c);
+                            buyerDatabase.add(buyer);
+                            break;
+                        }
+                    }
+                    client.setBuyerDatabase(buyerDatabase);
+                    try {
+                        client.sendServer("updateBuyer");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
+                    continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer, client);
                     continueShoppingEtc.setVisible(true);
                     dispose();
 
@@ -352,7 +768,14 @@ public class Client extends JComponent implements Runnable {
                     }
 
                     // read database from server here:
-                    // Store store = buyer.viewStore(product1, database);
+                    ArrayList<Seller> database;
+                    try {
+                        client.sendServer("requestSellerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    database = client.getSellerDatabase();
+                    Store store = buyer.viewStore(product1, database);
 
                     int numProductsForPurchase;
                     String numProductsForPurchases;
@@ -370,9 +793,31 @@ public class Client extends JComponent implements Runnable {
                         numProductsForPurchase = readInt(numProductsForPurchases);
                     } while (numProductsForPurchase == -1);
 
-                    //buyer.buyProduct(product1, numProductsForPurchase, store, database);
+                    buyer.buyProduct(product1, numProductsForPurchase, store, database);
 
-                    continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer);
+                    try {
+                        client.sendServer("requestBuyerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
+                    ArrayList<Buyer> buyerDatabase = client.getBuyerDatabase();
+
+                    for (Buyer c : buyerDatabase) {
+                        if (c.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
+                            buyerDatabase.remove(c);
+                            buyerDatabase.add(buyer);
+                            break;
+                        }
+                    }
+                    client.setBuyerDatabase(buyerDatabase);
+                    try {
+                        client.sendServer("updateBuyer");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
+                    continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer, client);
                     continueShoppingEtc.setVisible(true);
                     dispose();
 
@@ -383,7 +828,7 @@ public class Client extends JComponent implements Runnable {
                 @Override
                 public void actionPerformed(ActionEvent e) {
 
-                    marketPlace marketPlace = new marketPlace(buyer);
+                    marketPlace marketPlace = new marketPlace(buyer, client);
                     marketPlace.setVisible(true);
                     dispose();
 
@@ -399,13 +844,16 @@ public class Client extends JComponent implements Runnable {
     }
 
     private static class continueShoppingEtc extends JFrame {
+        private Client client;
         private JButton continueShoppingButton;
         private JButton viewCartButton;
         private JButton viewPurchasesButton;
         private JButton logOutButton;
 
-        public continueShoppingEtc(Buyer buyer) {
+
+        public continueShoppingEtc(Buyer buyer, Client client) {
             super("Continue Shopping?");
+            this.client = client;
             continueShoppingButton = new JButton("Continue shopping: Marketplace menu");
             viewCartButton = new JButton("View your cart");
             viewPurchasesButton = new JButton("View your purchases");
@@ -421,7 +869,7 @@ public class Client extends JComponent implements Runnable {
             continueShoppingButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    marketPlace marketPlace = new marketPlace(buyer);
+                    marketPlace marketPlace = new marketPlace(buyer, client);
                     marketPlace.setVisible(true);
                     dispose();
                 }
@@ -430,7 +878,13 @@ public class Client extends JComponent implements Runnable {
             viewCartButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    buyerCart buyerCart = new buyerCart(buyer);
+                    try {
+                        client.sendServer("requestBuyerDatabase");
+                    } catch (IOException k) {
+                        k.printStackTrace();
+                    }
+
+                    buyerCart buyerCart = new buyerCart(buyer, client, client.getBuyerDatabase());
                     buyerCart.setVisible(true);
 
                 }
@@ -454,6 +908,12 @@ public class Client extends JComponent implements Runnable {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     // maybe some kind of method here that writes all changes to the database (may not be needed)
+                    try {
+                        client.sendServer("updateBuyer");
+                        client.sendServer("updateSeller");
+                    } catch (IOException l) {
+                        l.printStackTrace();
+                    }
                     JOptionPane.showMessageDialog(null, "Thank you, come again!",
                             "Seeya!", JOptionPane.INFORMATION_MESSAGE);
 
@@ -470,17 +930,22 @@ public class Client extends JComponent implements Runnable {
     }
 
     private static class buyerCart extends JFrame {
+        private Client client;
         private JButton removeItemButton;
         private JButton purchaseCartButton;
         private JButton previousPageButton;
         private JComboBox<String> comboBox;
 
-        public buyerCart(Buyer buyer) {
+        private ArrayList<Buyer> buyerDatabase;
+
+        public buyerCart(Buyer buyer, Client client, ArrayList<Buyer> buyerDatabase) {
             super("Your Shopping Cart");
+            this.client = client;
             removeItemButton = new JButton("Remove item");
             purchaseCartButton = new JButton("Purchase cart");
             previousPageButton = new JButton("Previous page");
             comboBox = new JComboBox<>();
+            this.buyerDatabase = buyerDatabase;
 
             for (ProductPurchase product : buyer.getShoppingCart()) {
                 comboBox.addItem(product.toString());
@@ -505,7 +970,20 @@ public class Client extends JComponent implements Runnable {
                         }
                     }
 
-                    // update database here:
+                    for (Buyer c : buyerDatabase) {
+                        if (c.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
+                            buyerDatabase.remove(c);
+                            buyerDatabase.add(buyer);
+                            break;
+                        }
+                    }
+
+                    try {
+                        client.sendServer("updateBuyer");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
 
                 }
             });
@@ -517,10 +995,10 @@ public class Client extends JComponent implements Runnable {
                     ArrayList<Seller> database = null;
                     try {
                         // this is here for now just to be able to construct the framework but replace with reading database from server later
-                        database = buyer.readSellerDatabase();
-                    } catch (NoSellers ex) {
-                        JOptionPane.showMessageDialog(null, "There is nothing in your cart!",
-                                "Nothing in cart!", JOptionPane.INFORMATION_MESSAGE);
+                        client.sendServer("requestSellerDatabase");
+                        database = client.getSellerDatabase();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
                     }
                     int result = 0;
                     do {
@@ -529,6 +1007,20 @@ public class Client extends JComponent implements Runnable {
 
                     comboBox.removeAll();
                     dispose();
+
+                    for (Buyer c : buyerDatabase) {
+                        if (c.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
+                            buyerDatabase.remove(c);
+                            buyerDatabase.add(buyer);
+                            break;
+                        }
+                    }
+
+                    try {
+                        client.sendServer("updateBuyer");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
 
 
                 }
@@ -553,7 +1045,7 @@ public class Client extends JComponent implements Runnable {
         private JButton createAccountButton;
         private JButton loginButton;
 
-        public LoginOptionSeller() {
+        public LoginOptionSeller(Client client) {
             super("Login or Create Account");
             createAccountButton = new JButton("Create Account");
             loginButton = new JButton("Login");
@@ -566,7 +1058,7 @@ public class Client extends JComponent implements Runnable {
             createAccountButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    SellerLoginCredentials loginCredentials = new SellerLoginCredentials();
+                    SellerCreateAccountCredentials loginCredentials = new SellerCreateAccountCredentials(client);
                     loginCredentials.setVisible(true);
                     dispose();
 
@@ -576,10 +1068,66 @@ public class Client extends JComponent implements Runnable {
             loginButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    SellerLoginCredentials loginCredentials = new SellerLoginCredentials();
+                    sellerLoginCredentials loginCredentials = new sellerLoginCredentials(client);
                     loginCredentials.setVisible(true);
                     dispose();
 
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+        }
+    }
+
+    private static class BuyerCreateAccountCredentials extends JFrame {
+        private Client client;
+        private JTextField emailField;
+        private JPasswordField passwordField;
+        private JTextField nameField;
+        private JTextField ageField;
+        private JButton loginButton;
+        private User user;
+
+        public BuyerCreateAccountCredentials(Client client) {
+            super("Enter New Login Credentials");
+            this.client = client;
+            emailField = new JTextField(20);
+            passwordField = new JPasswordField(20);
+            nameField = new JTextField(20);
+            ageField = new JTextField(3);
+            loginButton = new JButton("Enter");
+            JPanel panel = new JPanel();
+            panel.add(new JLabel("Email:"));
+            panel.add(emailField);
+            panel.add(new JLabel("Password:"));
+            panel.add(passwordField);
+            panel.add(new JLabel("Name:"));
+            panel.add(nameField);
+            panel.add(new JLabel("Age:"));
+            panel.add(ageField);
+            panel.add(loginButton);
+            add(panel);
+
+            loginButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        client.sendServer("addUser");
+                        String password = passwordField.getPassword().toString();
+                        user = new User(client.getUniqueID(), emailField.getText(), password, nameField.getText(), Integer.parseInt(ageField.getText()));
+                        client.setLoginDetails(user);
+                        client.sendServer("confirmUser");
+
+
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+
+                    BuyerGUI buyerGUI = new BuyerGUI(user);
+                    buyerGUI.setVisible(true);
+                    dispose();
                 }
             });
 
@@ -590,28 +1138,23 @@ public class Client extends JComponent implements Runnable {
     }
 
     private static class BuyerLoginCredentials extends JFrame {
+        private Client client;
         private JTextField emailField;
         private JPasswordField passwordField;
-        private JTextField nameField;
-        private JTextField ageField;
         private JButton loginButton;
 
-        public BuyerLoginCredentials() {
+        public BuyerLoginCredentials(Client client) {
             super("Enter New Login Credentials");
+            this.client = client;
             emailField = new JTextField(20);
             passwordField = new JPasswordField(20);
-            nameField = new JTextField(20);
-            ageField = new JTextField(3);
+
             loginButton = new JButton("Enter");
             JPanel panel = new JPanel();
             panel.add(new JLabel("Email:"));
             panel.add(emailField);
             panel.add(new JLabel("Password:"));
             panel.add(passwordField);
-            panel.add(new JLabel("Name:"));
-            panel.add(nameField);
-            panel.add(new JLabel("Age:"));
-            panel.add(ageField);
             panel.add(loginButton);
             add(panel);
 
@@ -619,23 +1162,44 @@ public class Client extends JComponent implements Runnable {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     User user = null;
-
-                    //writer user info from server into user object here
                     try {
-                        dos.writeUTF("sendLogin\n");
-                        // write email here and other login info to server here
-                        dos.writeUTF(emailField.getText());
+                        char[] temp = passwordField.getPassword();
+                        User loginSuccess = processLogin(emailField.getText(), new String(temp));
 
-                        user = new User();
+
+                        if (loginSuccess != null) {
+                            BuyerGUI buyerGUI = new BuyerGUI(user);
+                            buyerGUI.setVisible(true);
+                            dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Incorrect Email or Password. Please try again!", "LoginError!", JOptionPane.ERROR_MESSAGE);
+                        }
                         // maybe pass the User as an argument to the BuyerGUI class, so we can use it in marketplace
 
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
+                }
 
-                    BuyerGUI buyerGUI = new BuyerGUI(user);
-                    buyerGUI.setVisible(true);
-                    dispose();
+                private User processLogin(String email, String password) throws IOException {
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    bw.write("sendLogin\n");
+                    bw.write(email);
+                    bw.write("\n");
+                    bw.flush();
+                    bw.write(password);
+                    bw.write("\n");
+                    bw.flush();
+                    System.out.println(password);
+
+                    BufferedReader btemp = new BufferedReader(new InputStreamReader(dis));
+                    String loginConfirmation = btemp.readLine();
+                    if (loginConfirmation.equals("loginError")) {
+                        return null;
+                    } else {
+                        System.out.println(loginConfirmation);
+                        return new User(loginConfirmation.split(", "));
+                    }
 
                 }
             });
@@ -646,20 +1210,25 @@ public class Client extends JComponent implements Runnable {
         }
     }
 
-    private static class SellerLoginCredentials extends JFrame {
+
+
+    private static class SellerCreateAccountCredentials extends JFrame {
+        private Client client;
         private JTextField emailField;
         private JPasswordField passwordField;
         private JTextField nameField;
         private JTextField ageField;
         private JButton loginButton;
+        private User user;
 
-        public SellerLoginCredentials() {
+        public SellerCreateAccountCredentials(Client client) {
             super("Enter New Login Credentials");
             emailField = new JTextField(20);
             passwordField = new JPasswordField(20);
             nameField = new JTextField(20);
             ageField = new JTextField(3);
             loginButton = new JButton("Enter");
+            this.client = client;
             JPanel panel = new JPanel();
             panel.add(new JLabel("Email:"));
             panel.add(emailField);
@@ -675,24 +1244,19 @@ public class Client extends JComponent implements Runnable {
             loginButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    User user = null;
-
-                    //writer user info from server into user object here
                     try {
-                        dos.writeUTF("sendLogin\n");
-                        // write email here and other login info to server here
-                        dos.writeUTF(emailField.getText());
-
-                        user = new User();
-
+                        client.sendServer("addUser");
+                        String password = passwordField.getPassword().toString();
+                        user = new User(client.getUniqueID(), emailField.getText(), password, nameField.getText(), Integer.parseInt(ageField.getText()));
+                        client.setLoginDetails(user);
+                        client.sendServer("confirmUser");
 
 
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
 
-                    // same thing here as buyerGUI but for sellerGUI
-                    SellerGUI sellerGUI = new SellerGUI(user);
+                    SellerGUI sellerGUI = new SellerGUI(user, client);
                     sellerGUI.setVisible(true);
                     dispose();
 
@@ -706,6 +1270,58 @@ public class Client extends JComponent implements Runnable {
         }
     }
 
+    private static class sellerLoginCredentials extends JFrame {
+        private Client client;
+        private JTextField emailField;
+        private JPasswordField passwordField;
+        private JButton loginButton;
+
+        public sellerLoginCredentials(Client client) {
+            super("Enter New Login Credentials");
+            this.client = client;
+            emailField = new JTextField(20);
+            passwordField = new JPasswordField(20);
+
+            loginButton = new JButton("Enter");
+            JPanel panel = new JPanel();
+            panel.add(new JLabel("Email:"));
+            panel.add(emailField);
+            panel.add(new JLabel("Password:"));
+            panel.add(passwordField);
+            panel.add(loginButton);
+            add(panel);
+
+            loginButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    User user = null;
+                    try {
+                        String[] x = {emailField.getText(), passwordField.getText()};
+                        client.setEmailPassword(x);
+                        boolean loginSuccess = client.sendServer("sendLogin");
+
+                        if (loginSuccess) {
+                            SellerGUI sellerGUI = new SellerGUI(user, client);
+                            sellerGUI.setVisible(true);
+                            dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Incorrect Email or Password. Please try again!", "LoginError!", JOptionPane.ERROR_MESSAGE);
+                        }
+                        // maybe pass the User as an argument to the BuyerGUI class, so we can use it in marketplace
+
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+        }
+    }
+
+
     public static int readInt(String input) {
         int result;
         try {
@@ -718,7 +1334,10 @@ public class Client extends JComponent implements Runnable {
         }
     }
 
+
     private static class SellerGUI extends JFrame {
+
+        private Client client;
 
         private JButton addButton;
         private JButton deleteButton;
@@ -727,9 +1346,11 @@ public class Client extends JComponent implements Runnable {
         private JButton editAccountButton;
         private JButton deleteAccountButton;
         private JButton logoutButton;
+        private Seller sellerX;
 
-        public SellerGUI(User user) {
+        public SellerGUI(User user, Client client) {
             super("Seller Menu: What actions would you like to take?");
+            this.client = client;
 
             addButton = new JButton("Add Store");
             deleteButton = new JButton("Delete Store");
@@ -754,14 +1375,26 @@ public class Client extends JComponent implements Runnable {
                 public void actionPerformed(ActionEvent e) {
 
                     // here for framework, but should read seller data from server here:
-                    ArrayList<Store> sellerStores = new ArrayList<>();
+                    try {
+                        client.sendServer("requestSellerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    ArrayList<Seller> database = client.getSellerDatabase();
 
+                    ArrayList<Store> sellerStores = null;
+                    for (Seller seller : database) {
+                        if (seller.getUniqueIdentifier() == user.getUniqueIdentifier()) {
+                            sellerStores = seller.getStores();
+                            break;
+                        }
+                    }
                     // constructing seller object from info from server:
-                    Seller seller = new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                    sellerX = new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
                             user.getAge(), sellerStores);
 
                     // generate new frame for adding a store:
-                    addStore addStore = new addStore(seller);
+                    addStore addStore = new addStore(sellerX, client);
                     addStore.setVisible(true);
 
                 }
@@ -773,20 +1406,33 @@ public class Client extends JComponent implements Runnable {
 
 
                     // here for framework, but should read seller data from server here:
-                    ArrayList<Store> sellerStores = new ArrayList<>();
+                    try {
+                        client.sendServer("requestSellerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    ArrayList<Seller> database = client.getSellerDatabase();
 
+                    ArrayList<Store> sellerStores = null;
+                    for (Seller seller : database) {
+                        if (seller.getUniqueIdentifier() == user.getUniqueIdentifier()) {
+                            sellerStores = seller.getStores();
+                            break;
+                        }
+                    }
                     // constructing seller object from info from server:
-                    Seller seller = new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                    sellerX = new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
                             user.getAge(), sellerStores);
 
 
-                    if (seller.getStores().size() == 0) {
+                    if (sellerX.getStores().size() == 0) {
                         JOptionPane.showMessageDialog(null, null,
                                 "You have no stores, please add one.", JOptionPane.INFORMATION_MESSAGE);
-                        // then close the JFrame
-                        dispose();
+
                     } else {
                         // new JFrame for deleting stores here:
+                        deleteStore deleteStore = new deleteStore(sellerX, client);
+                        deleteStore.setVisible(true);
 
                     }
 
@@ -797,7 +1443,8 @@ public class Client extends JComponent implements Runnable {
                 @Override
                 public void actionPerformed(ActionEvent e) {
 
-                   editStore editStore = new editStore(seller);
+                    editStore editStore = new editStore(sellerX, client);
+                    editStore.setVisible(true);
 
                 }
             });
@@ -838,15 +1485,15 @@ public class Client extends JComponent implements Runnable {
         }
     }
 
-
     private static class addStore extends JFrame {
+        private Client client;
         private JTextField storeName;
         private JTextField storeProducts;
         private JButton enterButton;
         private JButton backToMenuButton;
         private Seller seller;
 
-        public addStore(Seller seller) {
+        public addStore(Seller seller, Client client) {
 
             super("Add store");
             storeName = new JTextField(20);
@@ -854,6 +1501,7 @@ public class Client extends JComponent implements Runnable {
             enterButton = new JButton("Next step");
             backToMenuButton = new JButton("Back to Seller Menu");
             this.seller = seller;
+            this.client = client;
 
 
             JPanel panel = new JPanel();
@@ -874,7 +1522,7 @@ public class Client extends JComponent implements Runnable {
                     String nameOfStore = storeName.getText();
 
                     // no scanner here because there will be JOptionPanes after Somansh replaces them
-                    products = seller.addProducts(numProducts);
+                    products = seller.addProducts(numProducts, client.getSellerDatabase());
 
                     Store store = new Store(nameOfStore, products);
                     seller.addStore(-1, store);
@@ -883,7 +1531,26 @@ public class Client extends JComponent implements Runnable {
                             "Added New Store", JOptionPane.INFORMATION_MESSAGE);
 
                     //update database after this:
+                    try {
+                        client.sendServer("requestSellerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    ArrayList<Seller> database = client.getSellerDatabase();
 
+                    for (Seller x : database) {
+                        if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
+                            database.remove(x);
+                            database.add(seller);
+                        }
+                    }
+
+                    client.setSellerDatabase(database);
+                    try {
+                        client.sendServer("updateSeller");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
                     // close the frame (takes you back to seller menu):
                     // maybe not necessary if the user wants to add multiple stores before closing the frame
                     dispose();
@@ -912,12 +1579,13 @@ public class Client extends JComponent implements Runnable {
         private JButton deleteButton;
         private JButton backToMenuButton;
         private Seller seller;
+        private Client client;
 
-        public deleteStore(Seller seller) {
+        public deleteStore(Seller seller, Client client) {
             super("Delete A Store");
             comboBox = new JComboBox<>();
             this.seller = seller;
-
+            this.client = client;
             for (Store store : seller.getStores()) {
                 comboBox.addItem(store.getStoreName());
             }
@@ -945,6 +1613,26 @@ public class Client extends JComponent implements Runnable {
                     }
 
                     // update database after this:
+                    try {
+                        client.sendServer("requestSellerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    ArrayList<Seller> database = client.getSellerDatabase();
+
+                    for (Seller x : database) {
+                        if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
+                            database.remove(x);
+                            database.add(seller);
+                        }
+                    }
+
+                    client.setSellerDatabase(database);
+                    try {
+                        client.sendServer("updateSeller");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
 
                     // close the frame (takes you back to seller menu):
                     // maybe not necessary if the user wants to delete multiple stores before closing the frame
@@ -968,9 +1656,10 @@ public class Client extends JComponent implements Runnable {
 
     private static class editStore extends JFrame {
         private JTextField storeIndex;
+        private Client client;
 
-        public editStore(Seller seller) {
-
+        public editStore(Seller seller, Client client) {
+            this.client = client;
             storeIndex = new JTextField(3);
             JPanel panel = new JPanel();
             panel.add(storeIndex);
@@ -996,16 +1685,31 @@ public class Client extends JComponent implements Runnable {
                         }
                         JOptionPane.showMessageDialog(null, message);
                     }
+                    Store editStore = seller.getStores().get(Integer.parseInt(storeIndex.getText()));
+
 
                     try {
-                        dos.writeUTF(storeIndex.getText());
-                        // write it to the server
-
+                        client.sendServer("requestSellerDatabase");
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
+                    ArrayList<Seller> database = client.getSellerDatabase();
 
-                    editStore1 editStore1 = new editStore1();
+                    for (Seller x : database) {
+                        if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
+                            database.remove(x);
+                            database.add(seller);
+                        }
+                    }
+
+                    client.setSellerDatabase(database);
+                    try {
+                        client.sendServer("updateSeller");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    editStore1 editStore1 = new editStore1(seller, client, editStore);
+                    editStore1.setVisible(true);
 
                 }
             });
@@ -1013,10 +1717,13 @@ public class Client extends JComponent implements Runnable {
     }
 
     private static class editStore1 extends JFrame {
+        private Client client;
+        private Store edit;
 
-        public editStore1(Seller seller) {
+        public editStore1(Seller seller, Client client, Store edit) {
             super("What would you like to change about this store?");
-
+            this.client = client;
+            this.edit = edit;
             JButton storeButton = new JButton("1. Store Name");
             JButton addButton = new JButton("2. Add Products");
             JButton editButton = new JButton("3. Edit Products");
@@ -1032,7 +1739,7 @@ public class Client extends JComponent implements Runnable {
                 @Override
                 public void actionPerformed(ActionEvent e) {
 
-                    editStore1 store = new editStore1();
+                    editStore1 store = new editStore1(seller, client, edit);
 
                 }
             });
@@ -1043,8 +1750,30 @@ public class Client extends JComponent implements Runnable {
 
                     String input = JOptionPane.showInputDialog(null, "How many products do you want to add?");
                     int items = Integer.parseInt(input);
-                    edit.setProducts(addProducts(items, scanner));
-                    this.getStores().add(edit);
+                    edit.setProducts(seller.addProducts(items, client.getSellerDatabase()));
+                    seller.getStores().add(edit);
+
+                    try {
+                        client.sendServer("requestSellerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    ArrayList<Seller> database = client.getSellerDatabase();
+
+                    for (Seller x : database) {
+                        if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
+                            database.remove(x);
+                            database.add(seller);
+                        }
+                    }
+
+                    client.setSellerDatabase(database);
+                    try {
+                        client.sendServer("updateSeller");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
 
                 }
             });
@@ -1053,7 +1782,7 @@ public class Client extends JComponent implements Runnable {
                 @Override
                 public void actionPerformed(ActionEvent e) {
 
-                    Client.editStore1.editProduct1 editProduct1 = new Client.editStore1.editProduct1();
+                    Client.editStore1.editProduct1 editProduct1 = new Client.editStore1.editProduct1(seller, client);
 
                 }
             });
@@ -1081,14 +1810,36 @@ public class Client extends JComponent implements Runnable {
                     }
                     seller.getStores().add(edit);
 
+                    try {
+                        client.sendServer("requestSellerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    ArrayList<Seller> database = client.getSellerDatabase();
+
+                    for (Seller x : database) {
+                        if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
+                            database.remove(x);
+                            database.add(seller);
+                        }
+                    }
+
+                    client.setSellerDatabase(database);
+                    try {
+                        client.sendServer("updateSeller");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
                 }
             });
         }
 
         private static class storeName extends JFrame {
             private JTextField storeQuestion;
+            private Client client;
 
-            public storeName(Seller seller) {
+            public storeName(Seller seller, Client client) {
 
                 storeQuestion = new JTextField(20);
                 JPanel panel = new JPanel();
@@ -1114,6 +1865,27 @@ public class Client extends JComponent implements Runnable {
 
                         seller.getStores().add(edit);
 
+                        try {
+                            client.sendServer("requestSellerDatabase");
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                        ArrayList<Seller> database = client.getSellerDatabase();
+
+                        for (Seller x : database) {
+                            if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
+                                database.remove(x);
+                                database.add(seller);
+                            }
+                        }
+
+                        client.setSellerDatabase(database);
+                        try {
+                            client.sendServer("updateSeller");
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+
                     }
                 });
             }
@@ -1122,7 +1894,12 @@ public class Client extends JComponent implements Runnable {
         private static class editProduct1 extends JFrame {
             private JTextField productIndex;
 
-            public editProduct1(Seller seller) {
+            private Seller seller;
+            private Client client;
+
+            public editProduct1(Seller seller, Client client) {
+                this.seller = seller;
+                this.client = client;
 
                 productIndex = new JTextField(3);
                 JPanel panel = new JPanel();
@@ -1133,23 +1910,23 @@ public class Client extends JComponent implements Runnable {
                 productIndex.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        try {
-                            dos.writeUTF(productIndex.getText());
-                            Client.editStore1.editProduct1.editProduct2 editProduct2 = new Client.editStore1.editProduct1.editProduct2();
 
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
+                        Client.editStore1.editProduct1.editProduct2 editProduct2 = new Client.editStore1.editProduct1.editProduct2(seller, client);
+//??
                     }
                 });
             }
 
             private static class editProduct2 extends JFrame {
-                public editProduct2(Seller seller) {
+                private Client client;
+                private Seller seller;
+
+                public editProduct2(Seller seller, Client client) {
 
                     super("What would you like to edit about this product?");
                     Product productEdit = null;
 
+                    this.seller = seller;
                     JButton nameButton = new JButton("1. Name");
                     JButton descriptionButton = new JButton("2. Description");
                     JButton priceButton = new JButton("3. Price");
@@ -1239,6 +2016,27 @@ public class Client extends JComponent implements Runnable {
 
                         }
                     });
+
+                    try {
+                        client.sendServer("requestSellerDatabase");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    ArrayList<Seller> database = client.getSellerDatabase();
+
+                    for (Seller x : database) {
+                        if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
+                            database.remove(x);
+                            database.add(seller);
+                        }
+                    }
+
+                    client.setSellerDatabase(database);
+                    try {
+                        client.sendServer("updateSeller");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
             }
 
@@ -1270,220 +2068,6 @@ public class Client extends JComponent implements Runnable {
         }
 
     }
-
-    public viewStatistics(Seller seller, User user) {
-
-        super("How would you like to view the statistics?");
-
-        JButton customerStat = new JButton("1. By Customer");
-        JButton storeStat = new JButton("2. By Store");
-        JButton productStat = new JButton("3. All Products");
-        JButton mainMenu = new JButton("4. Return to main menu");
-
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(customerStat);
-        buttonPanel.add(storeStat);
-        buttonPanel.add(productStat);
-        buttonPanel.add(mainMenu);
-
-        customerStat.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-
-                ArrayList<Buyer> customers = new ArrayList<Buyer>();
-                Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
-                        user.getAge(), balance);
-
-                if (customers.contains(buyer)) {
-                    String message = String.format("Customer Name: %s\nItems Purchased: %d\nTotal Value (with current prices): %.2f\n\nItems In Cart: %d\nPotential Revenue: %.2f",
-                            buyer.getName(), itemsPurchased, totalSpent, itemsInCart, potentialSpending);
-                    JOptionPane.showMessageDialog(null, message);
-                } else if (customers.size() == 0) {
-                    JOptionPane.showMessageDialog(null, "No one has purchased your products yet!");
-                }
-            }
-        });
-
-
-        storeStat.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-
-                Client.viewStatistics.storeStat storeStat = new Client.viewStatistics.storeStat();
-            }
-        });
-
-
-        productStat.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-
-                Client.viewStatistics.productStat productStat = new Client.viewStatistics.productStat();
-
-            }
-        });
-
-
-        mainMenu.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-
-                JOptionPane.showMessageDialog("Goodbye");
-
-            }
-        });
-
-    }
-
-    private static class storeStat extends JFrame {
-
-        public storeStat(Seller seller) {
-
-            super("How would you like to sort??");
-            Product productEdit = null;
-
-            JButton qtyButton = new JButton("1. Qauntity Sold");
-            JButton revButton = new JButton("2. Total Revenue");
-            JButton stockButton = new JButton("3. Stock remaining");
-
-            JPanel buttonPanel = new JPanel();
-            buttonPanel.add(qtyButton);
-            buttonPanel.add(revButton);
-            buttonPanel.add(stockButton);
-
-            qtyButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-
-                    //collections part needs to be fixed
-
-                    Collections.sort(storeStat, Comparator.comparingInt(Store::getTotalQuantitySold).reversed());
-                    int i = 1;
-                    for (Store store : storeStat) {
-                        System.out.printf("%d. %s\n", i, store.getStoreName());
-                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
-                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
-                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
-                        i++;
-                    }
-
-                }
-            });
-
-            revButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-
-                    //collections part needs to be fixed
-
-                    Collections.sort(storeStat, Comparator.comparingDouble(Store::getTotalValueSold).reversed());
-                    int i = 1;
-                    for (Store store : storeStat) {
-                        System.out.printf("%d. %s\n", i, store.getStoreName());
-                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
-                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
-                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
-                        i++;
-                    }
-
-                }
-            });
-
-
-            stockButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-
-                    //collections part needs to be fixed
-
-                    Collections.sort(storeStat, Comparator.comparingInt(Store::getStockRemaining).reversed());
-                    int i = 1;
-                    for (Store store : storeStat) {
-                        System.out.printf("%d. %s\n", i, store.getStoreName());
-                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
-                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
-                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
-                        i++;
-                    }
-
-                }
-            });
-        }
-    }
-
-
-    private static class productStat extends JFrame {
-
-        public productStat(Seller seller) {
-
-            super("How would you like to sort??");
-            Product productEdit = null;
-
-            JButton qtyButton = new JButton("1. Qauntity Sold");
-            JButton revButton = new JButton("2. Total Revenue");
-            JButton stockButton = new JButton("3. Stock remaining");
-
-            JPanel buttonPanel = new JPanel();
-            buttonPanel.add(qtyButton);
-            buttonPanel.add(revButton);
-            buttonPanel.add(stockButton);
-
-            qtyButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-
-                    //collections part needs to be fixed
-
-                    Collections.sort(productStat, Comparator.comparingInt(Product::getQuantitySold).reversed());
-                    int i = 1;
-                    for (Store store : storeStat) {
-                        System.out.printf("%d. %s\n", i, store.getStoreName());
-                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
-                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
-                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
-                        i++;
-                    }
-
-                }
-            });
-
-            revButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-
-                    //collections part needs to be fixed
-
-                    Collections.sort(productStat, Comparator.comparingDouble(Product::getValueSold).reversed());
-                    int i = 1;
-                    for (Store store : storeStat) {
-                        System.out.printf("%d. %s\n", i, store.getStoreName());
-                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
-                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
-                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
-                        i++;
-                    }
-
-                }
-            });
-
-
-            stockButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-
-                    //collections part needs to be fixed
-
-                    Collections.sort(productStat, Comparator.comparingInt(Product::getQuantityForPurchase).reversed());
-                    int i = 1;
-                    for (Store store : storeStat) {
-                        System.out.printf("%d. %s\n", i, store.getStoreName());
-                        System.out.printf("\tQuantity Sold: %d\n", store.getTotalQuantitySold());
-                        System.out.printf("\tTotal Revenue: %.2f\n", store.getTotalValueSold());
-                        System.out.printf("\tStock Remaining: %d\n", store.getStockRemaining());
-                        i++;
-                    }
-
-                }
-            });
-        }
-
-
-    }
 }
-
-
-
-
-
 
 
