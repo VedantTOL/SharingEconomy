@@ -455,7 +455,7 @@ public class Buyer extends User {
 
     public Product viewProduct(ArrayList<Product> productList, int productNum) {
         Product selected = productList.get(productNum-1);
-        System.out.println(selected.productPage());
+        //System.out.println(selected.productPage());
         return selected;
     }
 
@@ -825,371 +825,6 @@ public class Buyer extends User {
         return null;
     }
 
-//    public void buyerMenu(Scanner scanner) throws DataFormatException, IOException {
-//        List<Integer> optionsA = Arrays.asList(1, 2, 3);
-//        ArrayList<ProductPurchase> shoppingCart = viewCart();
-//        setShoppingCart(shoppingCart);
-//
-//        if (getShoppingCart() == null) {
-//            setShoppingCart(new ArrayList<ProductPurchase>());
-//        }
-//
-//        ArrayList<ProductPurchase> purchases = viewPurchases();
-//        setPurchases(purchases);
-//
-//        if (getPurchases() == null) {
-//            setPurchases(new ArrayList<ProductPurchase>());
-//        }
-//        ArrayList<Seller> database = null;
-//
-//        int continueShopping = 0;
-//        boolean leave = false;
-//        while (!leave) {
-//            do {
-//                try {
-//                    database = readSellerDatabase();
-//                } catch (NoSellers e) {
-//                    System.out.println("No Sellers Exist Yet; You will be unable to shop!");
-//                }
-//                int shopBy = 0;
-//                do {
-//                    System.out.println("Do you want to view the whole marketplace or shop by Seller?\n1. Marketplace\n2. Seller\n3. Change Account Details\n4. Delete Account");
-//                    String shop = scanner.nextLine();
-//                    shopBy = readInt(shop);
-//                } while (shopBy == -1);
-//
-//                int choice;
-//                if (shopBy == 1) {
-//
-//                    do {
-//                        System.out.println("Do you want to view all products or do you want to search for a specific product?\n" +
-//                                "1. View all products\n2. Search");
-//                        String choices = scanner.nextLine();
-//                        choice = readInt(choices);
-//                    } while (choice == -1);
-//
-//                    ArrayList<Product> productList = viewMarketPlace(choice, database);
-//
-//                    if (productList == null) {
-//                        System.out.println("Sorry! Sellers have not yet posted anything to the marketplace.");
-//                        System.out.println("Come back later when sellers have stocked their stores!");
-//                        System.out.println("Logging you out...");
-//                        leave = true;
-//                    } else {
-//                        do {
-//                            int i = 1;
-//                            for (Product product: productList) {
-//                                System.out.printf("%d. %s\n", i, product.marketplaceString());
-//                                i++;
-//                            }
-//
-//                            int productNum;
-//                            do {
-//                                System.out.println("Enter the number that corresponds to the product you would like to view.");
-//                                String productNums = scanner.nextLine();
-//                                productNum = readInt(productNums);
-//                            } while (productNum == -1);
-//
-//                            Product product = viewProduct(productList, productNum);
-//
-//                            do {
-//                                System.out.println("Would you like to buy this product now, add it to your cart, or go back to the " +
-//                                        "previous page?\n1. Buy now\n" + "2. Add to cart\n" + "3. Previous page");
-//                                String choices = scanner.nextLine();
-//                                choice = readInt(choices);
-//                            } while (!optionsA.contains(choice));
-//
-//                            if (choice == 1) {
-//
-//                                Store store = viewStore(product, database);
-//
-//                                int numProductsForPurchase;
-//                                do {
-//                                    System.out.printf("How many of %s would you like to purchase?\n", product.getName());
-//                                    String numProductsForPurchases = scanner.nextLine();
-//                                    numProductsForPurchase = readInt(numProductsForPurchases);
-//                                } while (numProductsForPurchase == -1);
-//
-//                                buyProduct(product, numProductsForPurchase, store, database);
-//
-//                            } else if (choice == 2) {
-//                                Store store = viewStore(product, database);
-//
-//                                int quantity;
-//                                do {
-//                                    System.out.printf("How many of %s would you like to add?\n", product.getName());
-//                                    String quantityForCart = scanner.nextLine();
-//                                    quantity = readInt(quantityForCart);
-//                                } while (quantity == -1);
-//
-//                                addToShoppingCart(product, store, quantity);
-//
-//                            } else if (choice == 3) {
-//                                System.out.println("Taking you back to the product list...");
-//                            }
-//
-//                        } while (choice == 3);
-//
-//                        do {
-//                            System.out.println("Would you like to continue shopping, view your cart, view your " +
-//                                    "purchases, or log out?\n1. Continue shopping\n2. View cart\n3. View purchases" +
-//                                    "\n4. Log out");
-//                            String continueShoppings = scanner.nextLine();
-//                            continueShopping = readInt(continueShoppings);
-//                        } while (continueShopping == -1);
-//
-//                        if (continueShopping == 1) {
-//                            System.out.println("Taking you back to the marketplace menu...");
-//
-//                        } else if (continueShopping == 2) {
-//                            int removeFromCart = 0;
-//                            do {
-//                                for (ProductPurchase productPurchase : getShoppingCart()) {
-//                                    System.out.printf("Name: %s, Quantity ordered: %d, Price: %.2f\n", productPurchase.getName(),
-//                                            productPurchase.getOrderQuantity(), productPurchase.getPrice());
-//                                }
-//
-//                                int purchaseCart;
-//                                do {
-//                                    System.out.println("Would you like to remove a product from your cart, purchase your cart," +
-//                                            " or continue shopping?\n1. Remove item from cart.\n2. Purchase cart.\n3. Continue.");
-//                                    String cartPurchase = scanner.nextLine();
-//                                    purchaseCart = readInt(cartPurchase);
-//                                } while (purchaseCart == -1);
-//
-//                                if (purchaseCart == 1) {
-//                                    System.out.println("Which product would you like to remove from your cart? Please" +
-//                                            "type the name of the product.");
-//                                    String productName = scanner.nextLine();
-//
-//                                    for (ProductPurchase productPurchase : getShoppingCart()) {
-//                                        if (productName.equalsIgnoreCase(productPurchase.getName())) {
-//                                            removeFromShoppingCart(productPurchase);
-//                                        }
-//                                    }
-//                                    removeFromCart = 1;
-//
-//                                } else if (purchaseCart == 2) {
-//                                    removeFromCart = purchaseCart(database);
-//                                    //buyer.writeToDatabase(false);
-//
-//                                }
-//                            } while (removeFromCart == 1);
-//
-//                        } else if (continueShopping == 3) {
-//                            for (ProductPurchase productPurchase : getPurchases()) {
-//                                System.out.printf("Name: %s, Quantity ordered: %d, Price: %.2f\n", productPurchase.getName(),
-//                                        productPurchase.getOrderQuantity(), productPurchase.getPrice());
-//                            }
-//
-//                        } else if (continueShopping == 4) {
-//                            System.out.println("Thank you for shopping with us!");
-//                            try {
-//                                writeToBuyer();
-//                            } catch (IOException | DataFormatException e) {
-//                                System.out.println("Something");
-//                            }
-//                            leave = true;
-//
-//                        }
-//
-//                        if (continueShopping != 1 && continueShopping != 4) {
-//                            int logOut;
-//                            do {
-//                                System.out.println("Would you like to continue shopping or log out?\n 1. Continue shopping\n" +
-//                                        "2. Log Out\n");
-//
-//                                String outLog = scanner.nextLine();
-//                                logOut = readInt(outLog);
-//                            } while (logOut == -1);
-//
-//                            if (logOut == 1) {
-//                                continueShopping = 1;
-//
-//                            } else if (logOut == 2) {
-//                                try {
-//                                    writeToBuyer();
-//                                } catch (IOException | DataFormatException e) {
-//                                    System.out.println("Something");
-//                                }
-//                                leave = true;
-//                            }
-//                        }
-//                    }
-//
-//                } else if (shopBy == 2) {
-//                    // methods related to viewing by isSeller
-//                    ArrayList<Product> productList = null;
-//                    Seller seller = null;
-//                    do {
-//                        seller = shopBySeller(scanner, database);
-//                        if (seller == null) {
-//                            System.out.println("There is no seller name that matches this name");
-//                        } else {
-//                            productList = shopByStore(seller, scanner);
-//                        }
-//
-//                        if (productList == null) {
-//                            System.out.println("There is no store that matches this name.");
-//                        }
-//                    } while (seller == null);
-//
-//                    if (productList == null) {
-//                        System.out.println("Sorry! Sellers have not yet posted anything to the marketplace.");
-//                        System.out.println("Come back later when sellers have stocked their stores!");
-//                        System.out.println("Logging you out...");
-//                        leave = true;
-//                    } else {
-//                        do {
-//                            int i = 1;
-//                            for (Product product: productList) {
-//                                System.out.printf("%d. %s\n", i, product.marketplaceString());
-//                                i++;
-//                            }
-//
-//                            int productNum;
-//                            do {
-//                                System.out.println("Enter the number that corresponds to the product you would like to view.");
-//                                String productNums = scanner.nextLine();
-//                                productNum = readInt(productNums);
-//                            } while (productNum == -1);
-//
-//                            Product product = viewProduct(productList, productNum);
-//
-//                            do {
-//                                System.out.println("Would you like to buy this product now, add it to your cart, or go back to the " +
-//                                        "previous page?\n1. Buy now\n" + "2. Add to cart\n" + "3. Previous page\n");
-//                                String choices = scanner.nextLine();
-//                                choice = readInt(choices);
-//                            } while (!optionsA.contains(choice));
-//
-//                            if (choice == 1) {
-//
-//                                Store store = viewStore(product, database);
-//
-//                                int numProductsForPurchase;
-//                                do {
-//                                    System.out.printf("How many of %s would you like to purchase?\n", product.getName());
-//                                    String numProductsForPurchases = scanner.nextLine();
-//                                    numProductsForPurchase = readInt(numProductsForPurchases);
-//                                } while (numProductsForPurchase == -1);
-//
-//                                buyProduct(product, numProductsForPurchase, store,database);
-//
-//                            } else if (choice == 2) {
-//                                Store store = viewStore(product, database);
-//
-//                                int quantity;
-//                                do {
-//                                    System.out.printf("How many of %s would you like to add?\n", product.getName());
-//                                    String quantityForCart = scanner.nextLine();
-//                                    quantity = readInt(quantityForCart);
-//                                } while (quantity == -1);
-//
-//                                addToShoppingCart(product, store, quantity);
-//
-//                            } else if (choice == 3) {
-//                                System.out.println("Taking you back to the product list...");
-//                            }
-//
-//                        } while (choice == 3);
-//
-//                        do {
-//                            System.out.println("Would you like to continue shopping, view your cart, view your " +
-//                                    "purchases, or log out?\n1. Continue shopping\n2. View cart\n3. View purchases" +
-//                                    "\n4. Log out");
-//                            String continueShoppings = scanner.nextLine();
-//                            continueShopping = readInt(continueShoppings);
-//                            scanner.nextLine();
-//                        } while (continueShopping == -1);
-//
-//                        if (continueShopping == 1) {
-//                            System.out.println("Taking you back to the marketplace menu...");
-//
-//                        } else if (continueShopping == 2) {
-//                            int removeFromCart = 0;
-//                            do {
-//                                for (ProductPurchase productPurchase : getShoppingCart()) {
-//                                    System.out.printf("Name: %s, Quantity ordered: %d, Price: %.2f\n", productPurchase.getName(),
-//                                            productPurchase.getOrderQuantity(), productPurchase.getPrice());
-//                                }
-//
-//                                int purchaseCart;
-//                                do {
-//                                    System.out.println("Would you like to remove a product from your cart, purchase your cart," +
-//                                            " or continue shopping?\n1. Remove item from cart.\n2. Purchase cart.\n3. Continue.");
-//                                    String cartPurchase = scanner.nextLine();
-//                                    purchaseCart = readInt(cartPurchase);
-//                                } while (purchaseCart == -1);
-//
-//                                if (purchaseCart == 1) {
-//                                    System.out.println("Which product would you like to remove from your cart? Please" +
-//                                            "type the name of the product.");
-//                                    String productName = scanner.nextLine();
-//
-//                                    for (ProductPurchase productPurchase : getShoppingCart()) {
-//                                        if (productName.equalsIgnoreCase(productPurchase.getName())) {
-//                                            removeFromShoppingCart(productPurchase);
-//                                        }
-//                                    }
-//                                    removeFromCart = 1;
-//
-//                                } else if (purchaseCart == 2) {
-//                                    removeFromCart = purchaseCart(database);
-//                                    //buyer.writeToDatabase(false);
-//
-//                                }
-//                            } while (removeFromCart == 1);
-//
-//                        } else if (continueShopping == 3) {
-//                            for (ProductPurchase productPurchase : getPurchases()) {
-//                                System.out.printf("Name: %s, Quantity ordered: %d, Price: %.2f\n", productPurchase.getName(),
-//                                        productPurchase.getOrderQuantity(), productPurchase.getPrice());
-//                            }
-//
-//                        } else if (continueShopping == 4) {
-//                            System.out.println("Thank you for shopping with us!");
-//                            try {
-//                                writeToBuyer();
-//                            } catch (IOException | DataFormatException e) {
-//                                //System.out.println("Something");
-//                            }
-//                            leave = true;
-//
-//                        }
-//
-//                        if (continueShopping != 1 && continueShopping != 4) {
-//                            int logOut;
-//                            do {
-//                                System.out.println("Would you like to continue shopping or log out?\n 1. Continue shopping\n" +
-//                                        "2. Log Out\n");
-//
-//                                String outLog = scanner.nextLine();
-//                                logOut = readInt(outLog);
-//                            } while (logOut == -1);
-//
-//                            if (logOut == 1) {
-//                                continueShopping = 1;
-//
-//                            } else if (logOut == 2) {
-//                                leave = true;
-//                            }
-//                        }
-//                    }
-//                } else if (shopBy == 3) {
-//                    changeAccount(scanner, false);
-//                    continueShopping = 1;
-//                } else if (shopBy == 4) {
-//                    deleteAccount(scanner, false);
-//                    System.out.println("Thank you! Please come again!");
-//                    System.out.println("Logging you out!");
-//                    leave = true;
-//                    break;
-//                }
-//                writeToBuyer();
-//            } while (continueShopping == 1);
-//        }
-//    }
 
     public static int readInt(String input) {
         int result;
@@ -1198,8 +833,28 @@ public class Buyer extends User {
             return result;
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid Integer!");
+            JOptionPane.showMessageDialog(null, "Please enter a valid Integer!",
+                    "ERROR!", JOptionPane.ERROR_MESSAGE);
             return -1;
         }
+    }
+
+    public String serverString() {
+        String id = String.format("* %d\n", this.getUniqueIdentifier());
+        String shopping = "+";
+        String purchased = "-";
+        for (ProductPurchase product: this.getPurchases()){
+            purchased = purchased.concat(String.format("%d:%d, ", product.getUniqueID(), product.getOrderQuantity()));
+        }
+        purchased = purchased.substring(0, purchased.length() - 2);
+        for (ProductPurchase product: this.getShoppingCart()){
+            shopping = shopping.concat(String.format("%d:%d, ", product.getUniqueID(), product.getOrderQuantity()));
+        }
+        shopping = shopping.substring(0, shopping.length() - 2);
+        id = id.concat(shopping);
+        id = id.concat("\n");
+        id = id.concat(purchased);
+        return id;
     }
 
 }

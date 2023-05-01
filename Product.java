@@ -3,6 +3,16 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.zip.DataFormatException;
+/**
+ * The product class constructs a product object to be sold and bought in the marketplace. Each product also has a
+ * unique ID that which allows its store of origin to be identified after being sold. Products also have a specific
+ * name, price, description, quantity for purchase, and quantity sold. Methods in this class also allow for reading
+ * and writing products to their associated files.
+ *
+ *
+ * @author Roger, Somansh, Ethan, Vedant
+ * @version June 13, 2022
+ */
 
 public class Product {
     private String name;
@@ -46,10 +56,11 @@ public class Product {
                     storeIndex = -1;
                     seller = new Seller(Integer.parseInt(line.split(" ")[1]));
                     database.add(seller);
+
                 } else if (identifier == 43) {
                     storeIndex++;
                     store = new Store(line.split(" ")[1]);
-                    database.get(sellerIndex).addStore(store);
+                    database.get(sellerIndex).addStore(storeIndex, store);
                 } else {
                     try {
                         product = new Product(line.split(", "));

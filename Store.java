@@ -1,4 +1,13 @@
 import java.util.ArrayList;
+/**
+ * The store class constructs a store object that contains products that can be updated by the seller and bought by
+ * the buyer. The store object also allows the users to keep track of the number of products sold and the number
+ * remaining in the store.
+ *
+ *
+ * @author Roger, Somansh, Ethan, Vedant
+ * @version June 13, 2022
+ */
 
 public class Store {
     private String storeName;
@@ -62,7 +71,7 @@ public class Store {
     }
 
     public void addProduct(Product product) {
-        products.add(product);
+        this.products.add(product);
     }
 
     // to String method just to see what the store looks like
