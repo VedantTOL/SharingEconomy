@@ -12,7 +12,15 @@ import java.util.zip.DataFormatException;
 
 public class Client extends JComponent implements Runnable {
 
+    public int getUniqueID() {
+        return uniqueID;
+    }
 
+    public void setUniqueID(int uniqueID) {
+        this.uniqueID = uniqueID;
+    }
+
+    private int uniqueID;
     private static DataInputStream dis;
     private static DataOutputStream dos;
     private static Socket socket;
@@ -222,6 +230,14 @@ public class Client extends JComponent implements Runnable {
         } else if (option.charAt(0) == '+') {
             bw.write("deleteAccount\n");
             bw.flush();
+        } else if (option.equals("addUser")) {
+            bw.write("getUniqueInt\n");
+            bw.flush();
+            setUniqueID(Integer.parseInt(bfr.readLine()));
+        } else if (option.equals("confirmUser")) {
+            bw.write("confirmUser\n");
+            bw.flush();
+            bw.write(loginDetails.constructorString());
         }
 
         bw.flush();
@@ -1074,10 +1090,12 @@ public class Client extends JComponent implements Runnable {
                 public void actionPerformed(ActionEvent e) {
 
                     try {
-                        client.sendServer(String.format("*%s", emailField.getText()));
+                        client.sendServer("addUser");
+                        String password = passwordField.getPassword().toString();
+                        User newUser = new User(client.getUniqueID(), emailField.getText(), password, nameField.getText(), Integer.parseInt(ageField.getText()));
+                        client.setLoginDetails(newUser);
+                        client.sendServer("confirmUser");
 
-                        user = client.getUser();
-                        // User current = dis.read(); //read user
 
                     } catch (IOException ex) {
                         ex.printStackTrace();

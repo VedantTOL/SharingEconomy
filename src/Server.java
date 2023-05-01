@@ -182,6 +182,17 @@ class ClientHandler extends Thread {
                         }
                     }
                     updateLoginDatabase(userDB, isSeller);
+                } else if (action.equals("getUniqueInt")) {
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    bw.write(String.valueOf(userDB.size()));
+                    bw.write("\n");
+                    bw.flush();
+                } else if (action.equals("confirmUser")) {
+                    String nex = bfr.readLine();
+                    User newUser = new User(nex.split(","));
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    userDB.add(newUser);
+                    updateLoginDatabase(userDB, isSeller);
                 }
             }
 
@@ -575,6 +586,7 @@ class ClientHandler extends Thread {
         }
 
         try {
+            boolean newUser = false;
             toFile = new BufferedWriter(new FileWriter(filename));
             for (User k: result) {
                 toFile.write(k.constructorString());
