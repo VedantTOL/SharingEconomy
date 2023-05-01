@@ -437,7 +437,6 @@ public class Client extends JComponent implements Runnable {
     }
 
     private static class BuyerGUI extends JFrame {
-        private Client client;
         private JButton marketPlaceButton;
         private JButton shopBySellerButton;
         private User user;
@@ -446,6 +445,7 @@ public class Client extends JComponent implements Runnable {
             super("Would you like to view the whole marketplace or shop by seller?");
             marketPlaceButton = new JButton("View the whole marketplace");
             shopBySellerButton = new JButton("Shop by seller");
+
             this.user = user;
             JPanel panel = new JPanel();
             panel.add(marketPlaceButton);
@@ -509,14 +509,20 @@ public class Client extends JComponent implements Runnable {
     private static class marketPlace extends JFrame {
         private JButton viewAllProductsButton;
         private JButton searchForProductsButton;
+        private JButton viewCartButton;
+        private JButton viewPurchasesButton;
         private Buyer buyer;
 
         public marketPlace(Buyer buyer) {
             super("View all products or search for a specific product?");
             viewAllProductsButton = new JButton("View all products");
             searchForProductsButton = new JButton("Search for a specific product");
+            viewCartButton = new JButton("View your cart");
+            viewPurchasesButton = new JButton("View your purchases");
             this.buyer = buyer;
             JPanel panel = new JPanel();
+            panel.add(viewCartButton);
+            panel.add(viewPurchasesButton);
             panel.add(viewAllProductsButton);
             panel.add(searchForProductsButton);
             add(panel);
@@ -599,6 +605,45 @@ public class Client extends JComponent implements Runnable {
                 }
             });
 
+            viewCartButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    ArrayList<Buyer> db = requestBuyerDatabase();
+
+                    buyerCart buyerCart = new buyerCart(buyer, db);
+                    buyerCart.setVisible(true);
+
+                }
+
+                private ArrayList<Buyer> requestBuyerDatabase() {
+
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+                    try {
+                        bw.write("sendBuyer\n");
+                        bw.flush();
+                        return buyerServerRead(parseServer(bfr));
+
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+
+            viewPurchasesButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String purchasesString = "";
+                    for (ProductPurchase productPurchase : buyer.getPurchases()) {
+                        purchasesString = purchasesString + productPurchase.getName() + " " + productPurchase.getPrice() + "\n";
+                    }
+
+                    JOptionPane.showMessageDialog(null, purchasesString,
+                            "Your Purchases", JOptionPane.INFORMATION_MESSAGE);
+
+                }
+            });
+
             setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             pack();
             setLocationRelativeTo(null);
@@ -610,15 +655,15 @@ public class Client extends JComponent implements Runnable {
         private JComboBox<String> sellerComboBox;
         private ArrayList<Seller> sellers;
         private JButton selectSellerButton;
+        private JButton viewCartButton;
+        private JButton viewPurchasesButton;
         private Buyer buyer;
-        private Client client;
 
 
         public shopBySeller(ArrayList<Seller> sellers, Buyer buyer) {
             super("Select a Seller");
             this.sellers = sellers;
             this.buyer = buyer;
-            this.client = client;
 
             // Create GUI components
             sellerComboBox = new JComboBox<>();
@@ -626,10 +671,14 @@ public class Client extends JComponent implements Runnable {
                 sellerComboBox.addItem(seller.getName());
             }
 
-            selectSellerButton = new JButton("Select");
+            viewCartButton = new JButton("View your cart");
+            viewPurchasesButton = new JButton("View your purchases");
+            selectSellerButton = new JButton("Select seller");
             JPanel panel = new JPanel();
             panel.add(sellerComboBox);
             panel.add(selectSellerButton);
+            panel.add(viewCartButton);
+            panel.add(viewPurchasesButton);
             add(panel);
 
 
@@ -669,21 +718,58 @@ public class Client extends JComponent implements Runnable {
 
             });
 
+            viewCartButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    ArrayList<Buyer> db = requestBuyerDatabase();
+
+                    buyerCart buyerCart = new buyerCart(buyer, db);
+                    buyerCart.setVisible(true);
+
+                }
+
+                private ArrayList<Buyer> requestBuyerDatabase() {
+
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+                    try {
+                        bw.write("sendBuyer\n");
+                        bw.flush();
+                        return buyerServerRead(parseServer(bfr));
+
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+
+            viewPurchasesButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String purchasesString = "";
+                    for (ProductPurchase productPurchase : buyer.getPurchases()) {
+                        purchasesString = purchasesString + productPurchase.getName() + " " + productPurchase.getPrice() + "\n";
+                    }
+
+                    JOptionPane.showMessageDialog(null, purchasesString,
+                            "Your Purchases", JOptionPane.INFORMATION_MESSAGE);
+
+                }
+            });
+
             // Set JFrame properties
-            setSize(400, 200);
             setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
             setLocationRelativeTo(null);
             setVisible(true);
         }
     }
 
     private static class addToCartOrPurchase extends JFrame {
-        private Client client;
         private JButton addToCartButton;
         private JButton purchaseNowButton;
         private JButton previousPageButton;
         private JComboBox<String> comboBox;
-
         private ArrayList<Seller> sellers;
 
 
@@ -911,7 +997,6 @@ public class Client extends JComponent implements Runnable {
         }
 
         private static class continueShoppingEtc extends JFrame {
-            private Client client;
             private JButton continueShoppingButton;
             private JButton viewCartButton;
             private JButton viewPurchasesButton;
@@ -1573,8 +1658,6 @@ public class Client extends JComponent implements Runnable {
 
                         sellerX = coreProcess(database, user);
 
-
-
                         if (sellerX.getStores().size() == 0) {
                             JOptionPane.showMessageDialog(null, null,
                                     "You have no stores, please add one.", JOptionPane.INFORMATION_MESSAGE);
@@ -1694,8 +1777,8 @@ public class Client extends JComponent implements Runnable {
                         int numProducts = Integer.parseInt(storeProducts.getText());
                         String nameOfStore = storeName.getText();
 
-                        // no scanner here because there will be JOptionPanes after Somansh replaces them
-                        products = seller.addProducts(numProducts, client.getSellerDatabase());
+                        ArrayList<Seller> database = requestSellerDatabase();
+                        products = seller.addProducts(numProducts, database);
 
                         Store store = new Store(nameOfStore, products);
                         seller.addStore(-1, store);
@@ -1704,13 +1787,25 @@ public class Client extends JComponent implements Runnable {
                                 "Added New Store", JOptionPane.INFORMATION_MESSAGE);
 
                         //update database after this:
-                        try {
-                            client.sendServer("requestSellerDatabase");
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                        ArrayList<Seller> database = client.getSellerDatabase();
+                        coreProcess(database, seller);
+                        
+                        // close the frame (takes you back to seller menu):
+                        // maybe not necessary if the user wants to add multiple stores before closing the frame
+                        dispose();
+                    }
 
+                    private ArrayList<Seller> requestSellerDatabase() {
+                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+                        try {
+                            dos.writeUTF("sendSeller\n");
+                            return sellerServerRead(parseServer(bfr));
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                    private void coreProcess(ArrayList<Seller> database, Seller seller) {
                         for (Seller x : database) {
                             if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
                                 database.remove(x);
@@ -1718,17 +1813,22 @@ public class Client extends JComponent implements Runnable {
                             }
                         }
 
-                        client.setSellerDatabase(database);
+                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+                        String toServer = "";
+
                         try {
-                            client.sendServer("updateSeller");
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
+                            bw.write("writeSeller\n");
+                            for (Seller k : database) {
+                                toServer.concat(k.serverString());
+                            }
+                            bw.write(toServer);
+                            bw.write("\n");
+                            bw.flush();
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
                         }
-                        // close the frame (takes you back to seller menu):
-                        // maybe not necessary if the user wants to add multiple stores before closing the frame
-                        dispose();
-
-
                     }
                 });
 
