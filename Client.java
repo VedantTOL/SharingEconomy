@@ -18,6 +18,7 @@ public class Client extends JComponent implements Runnable {
     private JFrame frame;
 
 
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Client());
     }
@@ -125,17 +126,24 @@ public class Client extends JComponent implements Runnable {
     private static class BuyerGUI extends JFrame {
         private JButton marketPlaceButton;
         private JButton shopBySellerButton;
+        private JButton editAccountButton;
+        private JButton deleteAccountButton;
         private User user;
 
         public BuyerGUI(User user) {
             super("Would you like to view the whole marketplace or shop by seller?");
             marketPlaceButton = new JButton("View the whole marketplace");
             shopBySellerButton = new JButton("Shop by seller");
+            editAccountButton = new JButton("Edit Account");
+            deleteAccountButton = new JButton("Delete Account");
             this.user = user;
 
             JPanel panel = new JPanel();
+            panel.setSize(600,400);
             panel.add(marketPlaceButton);
             panel.add(shopBySellerButton);
+            panel.add(editAccountButton);
+            panel.add(deleteAccountButton);
             add(panel);
 
             marketPlaceButton.addActionListener(new ActionListener() {
@@ -183,12 +191,39 @@ public class Client extends JComponent implements Runnable {
 //                    dis.readUTF();
 
                     // generate new shop by seller Jframe here to allow the buyer to search for a seller
-                    shopBySeller bySeller = new shopBySeller(buyer);
-                    bySeller.setVisible(true);
-                    dispose();
 
                 }
             });
+            editAccountButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    JFrame currentFrame = (JFrame) SwingUtilities.getWindowAncestor((Component) e.getSource());
+                    currentFrame.dispose(); // Dispose the current JFrame
+
+                    editAccount editAccount = new editAccount(user);
+                    JFrame editAccountFrame = new JFrame("Edit Account");
+                    editAccountFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    editAccountFrame.getContentPane().add(editAccount);
+                    editAccountFrame.pack();
+                    editAccountFrame.setLocationRelativeTo(null);
+                    editAccountFrame.setVisible(true);
+                }
+            });
+            deleteAccountButton.addActionListener((new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    int reply = JOptionPane.showConfirmDialog(null,
+                            "Are you sure you want to delete your account?", "Delete account",
+                            JOptionPane.YES_NO_OPTION);
+                    if (reply == JOptionPane.YES_OPTION) {
+                        Window window = SwingUtilities.windowForComponent(deleteAccountButton);
+                        window.dispose();
+                        // TODO server for delete account
+                    } else if (reply == JOptionPane.NO_OPTION) {
+
+                    }
+                }
+            }));
 
             setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             pack();
@@ -196,6 +231,64 @@ public class Client extends JComponent implements Runnable {
 
         }
     }
+
+    private static class editAccount extends JPanel {
+        private JTextField emailField;
+        private JPasswordField passwordField;
+        private JTextField nameField;
+        private JTextField ageField;
+        private JButton saveButton;
+
+        public editAccount(User user) {
+            setLayout(new GridLayout(5, 2));
+            emailField = new JTextField(user.getEmail(), 20);
+            passwordField = new JPasswordField(user.getPassword(), 20);
+            nameField = new JTextField(user.getName(), 20);
+            ageField = new JTextField(Integer.toString(user.getAge()), 3);
+            saveButton = new JButton("Save");
+
+            add(new JLabel("New Email:"));
+            add(emailField);
+            add(new JLabel("New Password:"));
+            add(passwordField);
+            add(new JLabel("New Name:"));
+            add(nameField);
+            add(new JLabel("New Age:"));
+            add(ageField);
+            add(new JPanel()); // empty panel for spacing
+            add(saveButton);
+
+            saveButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // get updated values from text fields
+                    String email = emailField.getText();
+                    String password = new String(passwordField.getPassword());
+                    String name = nameField.getText();
+                    int age = Integer.parseInt(ageField.getText());
+
+                    // update user object
+                    user.setEmail(email);
+                    user.setPassword(password);
+                    user.setName(name);
+                    user.setAge(age);
+
+                    // save changes to database or file
+                    // ...
+
+                    // display confirmation message
+                    JOptionPane.showMessageDialog(null, "Changes saved successfully!");
+
+                    // create a new instance of the BuyerGUI and dispose the current frame
+                    BuyerGUI buyerGUI = new BuyerGUI(user);
+                    buyerGUI.setVisible(true);
+                    JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(editAccount.this);
+                    frame.dispose();
+                }
+            });
+        }
+    }
+
 
     private static class marketPlace extends JFrame {
         private JButton viewAllProductsButton;
@@ -241,6 +334,7 @@ public class Client extends JComponent implements Runnable {
                     }
 
 
+
                 }
             });
 
@@ -281,71 +375,7 @@ public class Client extends JComponent implements Runnable {
         }
     }
 
-    private static class shopBySeller extends JFrame {
 
-        private JButton viewProducts;
-        private JComboBox<String> sellerComboBox;
-        private JComboBox<String> productComboBox;
-        private ArrayList<Seller> shopSeller;
-        private JButton selectSellerButton;
-        private Seller selectedSeller;
-        private Buyer buyer;
-
-
-        public shopBySeller(ArrayList<Seller> sellers, Buyer buyer) {
-            super("Marketplace");
-            this.shopSeller = shopSeller;
-            this.buyer = buyer;
-
-            // Create GUI components
-            JLabel sellerLabel = new JLabel("Select a seller:");
-            sellerComboBox = new JComboBox<String>();
-            for (Seller seller : sellers) {
-                sellerComboBox.addItem(seller.getName());
-            }
-
-            JLabel productLabel = new JLabel("Select a product:");
-            productComboBox = new JComboBox<String>();
-
-            JButton viewButton = new JButton("View Product");
-            viewButton.addActionListener((ActionListener) this);
-
-            // Add components to JFrame
-            setLayout(new GridLayout(4, 1));
-            add(sellerLabel);
-            add(sellerComboBox);
-            add(productLabel);
-            add(productComboBox);
-            add(viewButton);
-
-            selectSellerButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String selectedSeller = (String) sellerComboBox.getSelectedItem();
-                    Seller seller = null;
-                    for (Seller s : shopSeller) {
-                        if (s.getName().equals(selectedSeller)) {
-                            seller = s;
-                            break;
-                        }
-                    }
-                    if (seller != null) {
-                        ArrayList<Product> products = seller.readSellerDatabase();
-                        productComboBox.removeAllItems();
-                        for (Product product : products) {
-                            productComboBox.addItem(product.getName());
-                        }
-                    }
-                }
-            });
-        
-            // Set JFrame properties
-            setSize(400, 200);
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            setLocationRelativeTo(null);
-            setVisible(true);
-        }
-    }
 
     private static class addToCartOrPurchase extends JFrame {
         private JButton addToCartButton;
