@@ -184,6 +184,7 @@ public class Client extends JComponent implements Runnable {
         BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
         String toServer = "";
+        User user;
 
         if (option.equals("requestSellerDatabase")) {
             bw.write("sendSeller\n");
@@ -204,6 +205,12 @@ public class Client extends JComponent implements Runnable {
             bw.flush();
             bw.write(option.substring(1, option.length() - 1));
             bw.write("\n");
+            bw.flush();
+        } else if (option.charAt(0) == '-') {
+            bw.write("changeAccount\n");
+            bw.flush();
+        } else if (option.charAt(0) == '+') {
+            bw.write("deleteAccount\n");
             bw.flush();
         }
 
@@ -241,6 +248,12 @@ public class Client extends JComponent implements Runnable {
             }
             bw.write(toServer);
             bw.write("end\n");
+            bw.flush();
+        } else if (action.equals("changeAccount")) {
+            bw.write(option.substring(1, option.length() - 1));
+            bw.flush();
+        } else if (action.equals("deleteAccount")) {
+            bw.write(option.substring(1, option.length() - 1));
             bw.flush();
         }
     }

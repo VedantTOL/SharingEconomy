@@ -145,6 +145,31 @@ class ClientHandler extends Thread {
                 } else if (action.equals("loginDatabase")) {
                     server.setLoginDetails(server.getUserInfo(bfr.readLine()), isSeller);
                     newWrite = true;
+                } else if (action.equals("changeAccount")) {
+                    bw.write("changeAccount\n");
+                    bw.flush();
+                    String user = bfr.readLine();
+                    User change = new User(user.split(", "));
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    for (User x: userDB) {
+                        if (change.getUniqueIdentifier() == x.getUniqueIdentifier()) {
+                            userDB.remove(x);
+                            userDB.add(change);
+                        }
+                    }
+                    updateLoginDatabase(userDB, isSeller);
+                } else if (action.equals("deleteAccount")) {
+                    bw.write("deleteAccount\n");
+                    bw.flush();
+                    String user = bfr.readLine();
+                    User delete = new User(user.split(", "));
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    for (User x: userDB) {
+                        if (delete.getUniqueIdentifier() == x.getUniqueIdentifier()) {
+                            userDB.remove(x);
+                        }
+                    }
+                    updateLoginDatabase(userDB, isSeller);
                 }
             }
 
@@ -549,6 +574,30 @@ class ClientHandler extends Thread {
             return;
         }
         this.loginDetails = loginDetails;
+    }
+
+    public void updateLoginDatabase(ArrayList<User> userDB, boolean isSeller) {
+        BufferedWriter toFile;
+        String filename;
+
+        if (isSeller) {
+            filename = "./src/SellerLogin.txt";
+        } else {
+            filename = "./src/BuyerLogin.txt";
+        }
+
+        try {
+            toFile = new BufferedWriter(new FileWriter(filename));
+            for (User k: userDB) {
+                toFile.write(k.constructorString());
+                toFile.write("\n");
+            }
+            toFile.close();
+
+        } catch (IOException e) {
+            return;
+        }
+
     }
 
     private ArrayList<Seller> sellerDatabase;
