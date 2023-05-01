@@ -63,7 +63,7 @@ public class Buyer extends User {
     public ArrayList<Buyer> readBuyerDatabase() throws DataFormatException, IOException {
 
         ArrayList<Buyer> database = new ArrayList<Buyer>();
-        ArrayList<Product> productDatabase = getProductDatabase();
+//        ArrayList<Product> productDatabase = getProductDatabase();
 
         String line;
         Buyer buyer = null;
@@ -194,26 +194,26 @@ public class Buyer extends User {
 
  */
 
-    public ArrayList<Product> getProductDatabase() {
-        ArrayList<Seller> database = null;
-        try {
-             database = readSellerDatabase();
-        } catch (NoSellers e) {
-            return null;
-        }
-        ArrayList<Product> productDatabase = new ArrayList<Product>();
-        if (database == null) {
-            return null;
-        }
-        for (Seller seller: database) {
-            for (Store store : seller.getStores()) {
-                for (Product product : store.getProducts()) {
-                    productDatabase.add(product);
-                }
-            }
-        }
-        return productDatabase;
-    }
+//    public ArrayList<Product> getProductDatabase() {
+//        ArrayList<Seller> database = null;
+//        try {
+//             database = readSellerDatabase();
+//        } catch (NoSellers e) {
+//            return null;
+//        }
+//        ArrayList<Product> productDatabase = new ArrayList<Product>();
+//        if (database == null) {
+//            return null;
+//        }
+//        for (Seller seller: database) {
+//            for (Store store : seller.getStores()) {
+//                for (Product product : store.getProducts()) {
+//                    productDatabase.add(product);
+//                }
+//            }
+//        }
+//        return productDatabase;
+//    }
 
     public ArrayList<Product> viewMarketPlace(int choice, ArrayList<Seller> database) {
         if (choice == 1) {
@@ -776,7 +776,7 @@ public class Buyer extends User {
         return purchases;
     }
 
-    public Seller shopBySeller(Scanner scanner, ArrayList<Seller> databaseSeller) {
+    public Seller shopBySeller(ArrayList<Seller> databaseSeller) {
 
         // add a do while to take into account "No seller found with the name: "
 

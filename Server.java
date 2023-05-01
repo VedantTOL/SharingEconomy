@@ -4,6 +4,7 @@ import java.io.DataOutputStream;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.zip.DataFormatException;
 
@@ -14,6 +15,7 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = new ServerSocket(4242);
+        serverSocket.setReuseAddress(true);
 
         while (true) {
 
@@ -31,6 +33,7 @@ public class Server {
                 Thread t = new ClientHandler(dis, dos, socket);
 
                 t.start();
+                System.out.println("Thread created");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -46,9 +49,9 @@ class ClientHandler extends Thread {
     final Socket socket;
 
 
-    ClientHandler(DataInputStream input, DataOutputStream output, Socket socket) {
-        this.input = input;
-        this.output = output;
+    ClientHandler(DataInputStream input, DataOutputStream output, Socket socket) throws IOException {
+        this.input = new DataInputStream(socket.getInputStream());
+        this.output = new DataOutputStream(socket.getOutputStream());
         this.socket = socket;
     }
 
@@ -63,6 +66,7 @@ class ClientHandler extends Thread {
         ClientHandler server = new ClientHandler();
 
         try {
+
             boolean newWrite = false;
             ArrayList<Seller> sellerDatabase = readSellerDatabase();
             ArrayList<Buyer> buyerDatabase = readBuyerDatabase();
@@ -73,8 +77,11 @@ class ClientHandler extends Thread {
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(output));
             String action;
             String data = "";
-            String sellerCheck = bfr.readLine();
-            boolean isSeller = sellerCheck.equals("seller");
+
+            boolean isSeller = Boolean.parseBoolean(bfr.readLine());
+            System.out.println(isSeller);
+
+
             while (true) {
                 data = "";
                 action = bfr.readLine();
@@ -83,9 +90,6 @@ class ClientHandler extends Thread {
                     //end thread
                 } else if (action.equals("sendSeller")) {
                     //send all seller data
-
-                    bw.write("sellerDatabase\n");
-                    bw.flush();
 
                     if (newWrite) {
                         sellerDatabase = readSellerDatabase();
@@ -101,18 +105,30 @@ class ClientHandler extends Thread {
                 } else if (action.equals("sendLogin")) {
                     //send login information
                     loginDatabase = getInformation(isSeller);
-                    bw.write("loginDatabase\n");
-                    bw.flush();
 
                     String email = bfr.readLine();
+                    String password = bfr.readLine();
+                    System.out.println(email);
                     User user = null;
+
                     for (User parse : loginDatabase) {
-                        if (user.getEmail().equals(email)) {
+                        if (parse.getEmail().equals(email)) {
                             user = parse;
                             break;
                         }
                     }
-                    bw.write(user.constructorString());
+                    if (user == null) {
+                        bw.write("loginError\n");
+                        bw.flush();
+                    } else {
+                        if (user.getPassword().equals(password)) {
+                            bw.write(user.constructorString());
+                            bw.write("\n");
+                            bw.flush();
+                        } else {
+                            bw.write("loginError\n");
+                        }
+                    }
                     bw.flush();
 
 
@@ -139,13 +155,50 @@ class ClientHandler extends Thread {
                 } else if (action.equals("loginDatabase")) {
                     server.setLoginDetails(server.getUserInfo(bfr.readLine()), isSeller);
                     newWrite = true;
+                } else if (action.equals("changeAccount")) {
+                    bw.write("changeAccount\n");
+                    bw.flush();
+                    String user = bfr.readLine();
+                    User change = new User(user.split(", "));
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    for (User x: userDB) {
+                        if (change.getUniqueIdentifier() == x.getUniqueIdentifier()) {
+                            userDB.remove(x);
+                            userDB.add(change);
+                        }
+                    }
+                    updateLoginDatabase(userDB, isSeller);
+                } else if (action.equals("deleteAccount")) {
+                    bw.write("deleteAccount\n");
+                    bw.flush();
+                    String user = bfr.readLine();
+                    User delete = new User(user.split(", "));
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    for (User x: userDB) {
+                        if (delete.getUniqueIdentifier() == x.getUniqueIdentifier()) {
+                            userDB.remove(x);
+                        }
+                    }
+                    updateLoginDatabase(userDB, isSeller);
+                } else if (action.equals("getUniqueInt")) {
+                    ArrayList<User> userDB = getInformation(isSeller);
+
+                    bw.write(String.valueOf(userDB.size()));
+                    bw.write("\n");
+                    bw.flush();
+                } else if (action.equals("confirmUser")) {
+                    String nex = bfr.readLine();
+
+                    User newUser = new User(nex.split(", "));
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    userDB.add(newUser);
+                    updateLoginDatabase(userDB, isSeller);
                 }
             }
+
         } catch (IOException | DataFormatException e) {
             e.printStackTrace();
         }
-
-
     }
 
     public static ArrayList<String> parseServer(BufferedReader bfr) throws IOException {
@@ -533,6 +586,7 @@ class ClientHandler extends Thread {
         }
 
         try {
+            boolean newUser = false;
             toFile = new BufferedWriter(new FileWriter(filename));
             for (User k: result) {
                 toFile.write(k.constructorString());
@@ -546,9 +600,33 @@ class ClientHandler extends Thread {
         this.loginDetails = loginDetails;
     }
 
+    public void updateLoginDatabase(ArrayList<User> userDB, boolean isSeller) {
+        BufferedWriter toFile;
+        String filename;
+
+        if (isSeller) {
+            filename = "./src/SellerLogin.txt";
+        } else {
+            filename = "./src/BuyerLogin.txt";
+        }
+
+        try {
+            toFile = new BufferedWriter(new FileWriter(filename));
+            for (User k: userDB) {
+                toFile.write(k.constructorString());
+                toFile.write("\n");
+            }
+            toFile.close();
+
+        } catch (IOException e) {
+            return;
+        }
+
+    }
 
     private ArrayList<Seller> sellerDatabase;
     private ArrayList<Buyer> buyerDatabase;
     private User loginDetails;
 
 }
+

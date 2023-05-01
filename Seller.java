@@ -36,22 +36,10 @@ public class Seller extends User {
     public Seller() {
         this.stores = null;
     }
-    public int getNewIndex(boolean newSeller) {
-        try {
-            ArrayList<Seller> database = readSellerDatabase();
-            if (newSeller) {
-                return database.size() + 1;
-            } else {
-                return 0;
-            }
-        } catch (NoSellers e) {
-            return 0;
-        }
-    }
 
     public ArrayList<Buyer> readBuyerDatabase() throws DataFormatException, IOException {
         ArrayList<Buyer> database = new ArrayList<Buyer>();
-        ArrayList<Product> productDatabase = getProductDatabase();
+        //ArrayList<Product> productDatabase = getProductDatabase();
 
         String line;
         Buyer buyer = null;
@@ -737,7 +725,7 @@ public class Seller extends User {
         }
     }
 
-    public ArrayList<Product> addProducts(int count) {
+    public ArrayList<Product> addProducts(int count, ArrayList<Seller> database) {
         ArrayList<Product> products = new ArrayList<Product>();
         for (int i = 0; i < count; i++) {
 
@@ -754,12 +742,24 @@ public class Seller extends User {
             String priceString = JOptionPane.showInputDialog(null, "How much does this item cost?");
             double price = Double.parseDouble(priceString);
 
-            int uniqueID = getProductDatabase().size() + 1 + i;
+            int uniqueID = getProductDatabase(database).size() + 1 + i;
 
             Product product = new Product(name, description, stock, price, 0, uniqueID);
             products.add(product);
         }
         return products;
+    }
+    public ArrayList<Product> getProductDatabase(ArrayList<Seller> database) {
+
+        ArrayList<Product> productDatabase = new ArrayList<Product>();
+        for (Seller seller: database) {
+            for (Store store : seller.getStores()) {
+                for (Product product : store.getProducts()) {
+                    productDatabase.add(product);
+                }
+            }
+        }
+        return productDatabase;
     }
 
     public String serverString() {
