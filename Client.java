@@ -439,17 +439,21 @@ public class Client extends JComponent implements Runnable {
     private static class BuyerGUI extends JFrame {
         private JButton marketPlaceButton;
         private JButton shopBySellerButton;
+        private JButton deleteAccountButton;
         private User user;
 
         public BuyerGUI(User user) {
             super("Would you like to view the whole marketplace or shop by seller?");
             marketPlaceButton = new JButton("View the whole marketplace");
             shopBySellerButton = new JButton("Shop by seller");
+            deleteAccountButton = new JButton("Delete Account");
 
             this.user = user;
             JPanel panel = new JPanel();
             panel.add(marketPlaceButton);
             panel.add(shopBySellerButton);
+            panel.add(deleteAccountButton);
+
             add(panel);
 
             marketPlaceButton.addActionListener(new ActionListener() {
@@ -498,6 +502,27 @@ public class Client extends JComponent implements Runnable {
                     dispose();
                 }
             });
+
+            deleteAccountButton.addActionListener((new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // balance can be 0 since the account is going to either be deleted or buyer will be created in another method
+                    int balance = 0;
+
+                    Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                            user.getAge(), balance);
+
+                    int reply = JOptionPane.showConfirmDialog(null,
+                            "Are you sure you want to delete your account?", "Delete account",
+                            JOptionPane.YES_NO_OPTION);
+                    if (reply == JOptionPane.YES_OPTION) {
+                        Window window = SwingUtilities.windowForComponent(deleteAccountButton);
+                        window.dispose();
+                        // TODO server for buyer delete account
+
+                    }
+                }
+            }));
 
             setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             pack();
@@ -578,7 +603,7 @@ public class Client extends JComponent implements Runnable {
 
                     int choice = 2;
 
-                    ArrayList<Product> productList = buyer.viewMarketPlace(choice, database);
+                    ArrayList<Product> productList = processProduct(buyer, choice, database);
                     if (productList == null) {
                         JOptionPane.showMessageDialog(null, "Sorry! Sellers have not yet posted anything to the marketplace.\n" +
                                         "Come back later when sellers have stocked their stores!\n" + "Logging you out...\n",
@@ -590,6 +615,10 @@ public class Client extends JComponent implements Runnable {
                         dispose();
                     }
 
+                }
+
+                private ArrayList<Product> processProduct(Buyer buyer, int choice, ArrayList<Seller> database) {
+                    return buyer.viewMarketPlace(choice, database);
                 }
 
                 private ArrayList<Seller> requestSellerDatabase() {
@@ -1699,10 +1728,39 @@ public class Client extends JComponent implements Runnable {
                     @Override
                     public void actionPerformed(ActionEvent e) {
 
-                        //editStore editStore = new editStore(sellerX);
-                        //editStore.setVisible(true);
+                        ArrayList<Seller> database = requestSellerDatabase();
+
+                        sellerX = coreProcess(database, user);
+
+                        editStore editStore = new editStore(sellerX);
+                        editStore.setVisible(true);
 
                     }
+
+                    private Seller coreProcess(ArrayList<Seller> database, User user) {
+                        ArrayList<Store> sellerStores = null;
+                        for (Seller seller : database) {
+                            if (seller.getUniqueIdentifier() == user.getUniqueIdentifier()) {
+                                sellerStores = seller.getStores();
+                                break;
+                            }
+                        }
+                        // constructing seller object from info from server:
+                        return new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                                user.getAge(), sellerStores);
+                    }
+
+                    private ArrayList<Seller> requestSellerDatabase() {
+                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+                        try {
+                            dos.writeUTF("sendSeller\n");
+                            return sellerServerRead(parseServer(bfr));
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
                 });
 
                 statisticsButton.addActionListener(new ActionListener() {
@@ -1722,7 +1780,21 @@ public class Client extends JComponent implements Runnable {
                 deleteAccountButton.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
+                        // stores can be empty since the account is going to either be deleted or seller will be created in another method
+                       ArrayList <Store> stores = new ArrayList<>();
 
+                        Seller seller = new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                                user.getAge(), stores);
+
+                        int reply = JOptionPane.showConfirmDialog(null,
+                                "Are you sure you want to delete your account?", "Delete account",
+                                JOptionPane.YES_NO_OPTION);
+                        if (reply == JOptionPane.YES_OPTION) {
+                            Window window = SwingUtilities.windowForComponent(deleteAccountButton);
+                            window.dispose();
+                            // TODO server for seller delete account
+
+                        }
 
                     }
                 });
@@ -1788,9 +1860,8 @@ public class Client extends JComponent implements Runnable {
 
                         //update database after this:
                         coreProcess(database, seller);
-                        
+
                         // close the frame (takes you back to seller menu):
-                        // maybe not necessary if the user wants to add multiple stores before closing the frame
                         dispose();
                     }
 
@@ -1942,424 +2013,247 @@ public class Client extends JComponent implements Runnable {
 
                     }
                 });
+
+                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                pack();
+                setLocationRelativeTo(null);
+
             }
 
         }
+
 
         private static class editStore extends JFrame {
-            private JTextField storeIndex;
-            private Client client;
+          private JComboBox<String> comboBox;
+          private JButton selectStoreButton;
+          private JButton backToMenuButton;
+          private Seller seller;
 
-            public editStore(Seller seller, Client client) {
-                this.client = client;
-                storeIndex = new JTextField(3);
+            public editStore(Seller seller) {
+                super("Edit A Store");
+                comboBox = new JComboBox<>();
+                this.seller = seller;
+
+                for (Store store : seller.getStores()) {
+                    comboBox.addItem(store.getStoreName());
+                }
+                selectStoreButton = new JButton("Select store");
+                backToMenuButton = new JButton("Back to menu");
+
                 JPanel panel = new JPanel();
-                panel.add(storeIndex);
-                panel.add(new JLabel("Enter the store index you want to edit: "));
+                panel.add(comboBox);
+                panel.add(selectStoreButton);
+                panel.add(backToMenuButton);
                 add(panel);
 
-                storeIndex.addActionListener(new ActionListener() {
+                selectStoreButton.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
+                        // assigns selectedItem to the item currently selected in the drop-down box (comboBox)
+                        String selectedItem = (String) comboBox.getSelectedItem();
 
-                        Store edit = null;
-                        //int i = 1;
-
-                        if (seller.getStores().size() == 0) {
-                            JOptionPane.showMessageDialog(null, "You have no stores, please add one!");
-                        } else {
-                            int i = 1;
-                            String message = "";
-                            //int i = 1;
-                            for (Store store : seller.getStores()) {
-                                message += i + ": " + store.getStoreName() + "\n";
-                                i++;
-                            }
-                            JOptionPane.showMessageDialog(null, message);
-                        }
-                        Store editStore = seller.getStores().get(Integer.parseInt(storeIndex.getText()));
-
-
-                        try {
-                            client.sendServer("requestSellerDatabase");
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                        ArrayList<Seller> database = client.getSellerDatabase();
-
-                        for (Seller x : database) {
-                            if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
-                                database.remove(x);
-                                database.add(seller);
+                        // deletes the selected item from the seller's stores and the drop-down box
+                        Store storeForEdit = null;
+                        for (Store store : seller.getStores()) {
+                            if (selectedItem.equals(store.getStoreName())) {
+                                storeForEdit = store;
                             }
                         }
 
-                        client.setSellerDatabase(database);
-                        try {
-                            client.sendServer("updateSeller");
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                        editStore1 editStore1 = new editStore1(seller, client, editStore);
-                        editStore1.setVisible(true);
+                        // new JFrame to edit the products in the selected store (pass the store and the seller):
+                        editStoreProducts editStoreProducts = new editStoreProducts(storeForEdit, seller);
+                        editStoreProducts.setVisible(true);
+
+                        // close the frame:
+                        dispose();
 
                     }
+
                 });
+
+                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                pack();
+                setLocationRelativeTo(null);
             }
         }
 
-        private static class editStore1 extends JFrame {
-            private Client client;
-            private Store edit;
+        private static class editStoreProducts extends JFrame {
+        private JComboBox<String> comboBox;
+        private JButton changeProductNameButton;
+        private JTextField newProductName;
+        private JButton changeProductDescription;
+        private JTextField newProductDescription;
+        private JButton changeProductQuantity;
+        private JTextField newProductQuantity;
+        private JButton deleteProductButton;
+        private JButton createNewProductButton;
 
-            public editStore1(Seller seller, Client client, Store edit) {
-                super("What would you like to change about this store?");
-                this.client = client;
-                this.edit = edit;
-                JButton storeButton = new JButton("1. Store Name");
-                JButton addButton = new JButton("2. Add Products");
-                JButton editButton = new JButton("3. Edit Products");
-                JButton deleteButton = new JButton("4. Delete Products");
+        private Store store;
+        private Seller seller;
 
-                JPanel buttonPanel = new JPanel();
-                buttonPanel.add(storeButton);
-                buttonPanel.add(addButton);
-                buttonPanel.add(editButton);
-                buttonPanel.add(deleteButton);
+        public editStoreProducts(Store store, Seller seller) {
+            super("Edit Store Contents");
+            this.store = store;
+            this.seller = seller;
+            comboBox = new JComboBox<>();
 
-                storeButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        editStore1 store = new editStore1(seller, client, edit);
-
-                    }
-                });
-
-                addButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        String input = JOptionPane.showInputDialog(null, "How many products do you want to add?");
-                        int items = Integer.parseInt(input);
-                        edit.setProducts(seller.addProducts(items, client.getSellerDatabase()));
-                        seller.getStores().add(edit);
-
-                        try {
-                            client.sendServer("requestSellerDatabase");
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                        ArrayList<Seller> database = client.getSellerDatabase();
-
-                        for (Seller x : database) {
-                            if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
-                                database.remove(x);
-                                database.add(seller);
-                            }
-                        }
-
-                        client.setSellerDatabase(database);
-                        try {
-                            client.sendServer("updateSeller");
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-
-
-                    }
-                });
-
-                editButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        Client.editStore1.editProduct1 editProduct1 = new Client.editStore1.editProduct1(seller, client);
-
-                    }
-                });
-
-                deleteButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        Product productDelete = null;
-                        int k = 1;
-                        StringBuilder productList = new StringBuilder();
-                        for (Product product : edit.getProducts()) {
-                            productList.append(k).append(": ").append(product.getName()).append("\n");
-                            k++;
-                        }
-                        JOptionPane.showMessageDialog(null, productList.toString(), "Products List", JOptionPane.INFORMATION_MESSAGE);
-
-                        while (true) {
-                            String productToDelete = JOptionPane.showInputDialog(null, "Enter the product index you want to delete:");
-                            int x = readInt(productToDelete);
-                            if (x != -1) {
-                                edit.getProducts().remove(x - 1);
-                                break;
-                            }
-                        }
-                        seller.getStores().add(edit);
-
-                        try {
-                            client.sendServer("requestSellerDatabase");
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                        ArrayList<Seller> database = client.getSellerDatabase();
-
-                        for (Seller x : database) {
-                            if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
-                                database.remove(x);
-                                database.add(seller);
-                            }
-                        }
-
-                        client.setSellerDatabase(database);
-                        try {
-                            client.sendServer("updateSeller");
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-
-                    }
-                });
+            for (Product product : store.getProducts()) {
+                comboBox.addItem(product.productPage());
             }
 
-            private static class storeName extends JFrame {
-                private JTextField storeQuestion;
-                private Client client;
+            changeProductNameButton = new JButton("Set new product name");
+            newProductName = new JTextField(10);
+            changeProductDescription = new JButton("Set new product description");
+            newProductDescription = new JTextField(20);
+            changeProductQuantity = new JButton("Set new product quantity");
+            newProductQuantity = new JTextField(5);
+            deleteProductButton = new JButton("Delete selected product");
+            createNewProductButton = new JButton("Create new product");
 
-                public storeName(Seller seller, Client client) {
+            JPanel panel = new JPanel();
+            panel.add(comboBox);
+            panel.add(changeProductNameButton);
+            panel.add(newProductName);
+            panel.add(changeProductDescription);
+            panel.add(newProductDescription);
+            panel.add(changeProductQuantity);
+            panel.add(newProductQuantity);
+            panel.add(deleteProductButton);
+            panel.add(createNewProductButton);
 
-                    storeQuestion = new JTextField(20);
-                    JPanel panel = new JPanel();
-                    panel.add(storeQuestion);
-                    panel.add(new JLabel("Enter the  name of the Store: "));
-                    add(panel);
+            changeProductNameButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String selectedProduct = (String) comboBox.getSelectedItem();
 
-                    storeQuestion.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            Store edit = null;
+                    Product editedProduct = null;
+                    for (Product product : store.getProducts()) {
+                        if (selectedProduct.equals(product.productPage())) {
+                            editedProduct = product;
 
-                            while (true) {
-                                String newName = JOptionPane.showInputDialog(null, "Enter the new name of the Store:");
-                                if (newName == null) {
-                                    JOptionPane.showMessageDialog(null, "Please enter a valid String (cannot be empty!)");
-                                } else {
-                                    JOptionPane.showMessageDialog(null, "New store name printed successfully.");
-                                    edit.setStoreName(newName);
-                                    break;
-                                }
-                            }
+                            // replaces old product in combo box with new product
+                            comboBox.removeItem(selectedProduct);
+                            editedProduct.setName(newProductName.getText());
+                            comboBox.addItem(editedProduct.productPage());
 
-                            seller.getStores().add(edit);
+                            //replaces old product in the store with the new product
+                            store.getProducts().set(store.getProducts().indexOf(product), editedProduct);
 
-                            try {
-                                client.sendServer("requestSellerDatabase");
-                            } catch (IOException ex) {
-                                throw new RuntimeException(ex);
-                            }
-                            ArrayList<Seller> database = client.getSellerDatabase();
-
-                            for (Seller x : database) {
-                                if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
-                                    database.remove(x);
-                                    database.add(seller);
-                                }
-                            }
-
-                            client.setSellerDatabase(database);
-                            try {
-                                client.sendServer("updateSeller");
-                            } catch (IOException ex) {
-                                throw new RuntimeException(ex);
-                            }
-
-                        }
-                    });
-                }
-            }
-
-            private static class editProduct1 extends JFrame {
-                private JTextField productIndex;
-
-                private Seller seller;
-                private Client client;
-
-                public editProduct1(Seller seller, Client client) {
-                    this.seller = seller;
-                    this.client = client;
-
-                    productIndex = new JTextField(3);
-                    JPanel panel = new JPanel();
-                    panel.add(productIndex);
-                    panel.add(new JLabel("Enter the product index you want to edit: "));
-                    add(panel);
-
-                    productIndex.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-
-                            Client.editStore1.editProduct1.editProduct2 editProduct2 = new Client.editStore1.editProduct1.editProduct2(seller, client);
-//??
-                        }
-                    });
-                }
-
-                private static class editProduct2 extends JFrame {
-                    private Client client;
-                    private Seller seller;
-
-                    public editProduct2(Seller seller, Client client) {
-
-                        super("What would you like to edit about this product?");
-                        Product productEdit = null;
-
-                        this.seller = seller;
-                        JButton nameButton = new JButton("1. Name");
-                        JButton descriptionButton = new JButton("2. Description");
-                        JButton priceButton = new JButton("3. Price");
-                        JButton qtyButton = new JButton("4. Quantity For Purchase");
-
-                        JPanel buttonPanel = new JPanel();
-                        buttonPanel.add(nameButton);
-                        buttonPanel.add(descriptionButton);
-                        buttonPanel.add(priceButton);
-                        buttonPanel.add(qtyButton);
-
-                        nameButton.addActionListener(new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-
-                                while (true) {
-                                    String newName = JOptionPane.showInputDialog(null, "Enter the new name of the Product:");
-                                    if (newName == null) {
-                                        JOptionPane.showMessageDialog(null, "Please enter a valid String (cannot be empty!)");
-                                    } else {
-                                        productEdit.setName(newName);
-                                        JOptionPane.showMessageDialog(null, "Product name updated successfully!");
-                                        break;
-                                    }
-                                }
-
-                            }
-                        });
-
-                        descriptionButton.addActionListener(new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-
-                                while (true) {
-                                    String newDescription = JOptionPane.showInputDialog(null, "Enter the new description of the product:");
-                                    if (newDescription == null) {
-                                        JOptionPane.showMessageDialog(null, "Please enter a valid String (cannot be empty!)");
-                                    } else {
-                                        productEdit.setDescription(newDescription);
-                                        JOptionPane.showMessageDialog(null, "Product description updated successfully!");
-                                        break;
-                                    }
-                                }
-
-                            }
-                        });
-
-                        priceButton.addActionListener(new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                while (true) {
-                                    String input = JOptionPane.showInputDialog(null, "Enter the new price of the Product:");
-                                    double newPrice = Double.parseDouble(input);
-                                    if (newPrice != -1) {
-                                        if (newPrice < 0) {
-                                            JOptionPane.showMessageDialog(null, "Please enter a valid Price (cannot be less than 0!)");
-                                        } else {
-                                            productEdit.setPrice(newPrice);
-                                            JOptionPane.showMessageDialog(null, "Price was updated successfully!");
-                                            break;
-                                        }
-                                    }
-                                }
-
-                            }
-                        });
-
-
-                        qtyButton.addActionListener(new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-
-                                while (true) {
-                                    String input = JOptionPane.showInputDialog(null, "How much stock is available?");
-                                    try {
-                                        int newStock = Integer.parseInt(input);
-                                        if (newStock < 0) {
-                                            JOptionPane.showMessageDialog(null, "Please enter a number greater than 0!");
-                                        } else {
-                                            productEdit.setQuantityForPurchase(newStock);
-                                            break;
-                                        }
-                                    } catch (NumberFormatException f) {
-                                        JOptionPane.showMessageDialog(null, "Please enter a valid integer!");
-                                    }
-                                }
-
-                            }
-                        });
-
-                        try {
-                            client.sendServer("requestSellerDatabase");
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                        ArrayList<Seller> database = client.getSellerDatabase();
-
-                        for (Seller x : database) {
-                            if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
-                                database.remove(x);
-                                database.add(seller);
-                            }
-                        }
-
-                        client.setSellerDatabase(database);
-                        try {
-                            client.sendServer("updateSeller");
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
                         }
                     }
                 }
 
-                private static class deleteStore extends JFrame {
-                    private JTextField newQtyBox;
+                // probably need to write to seller database with updated store and seller object:
 
-                    public deleteStore() {
+            });
 
-                        newQtyBox = new JTextField(20);
-                        JPanel panel = new JPanel();
-                        panel.add(newQtyBox);
-                        panel.add(new JLabel("Enter the index of the store you want to delete."));
-                        add(panel);
+            changeProductDescription.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String selectedProduct = (String) comboBox.getSelectedItem();
 
-                        newQtyBox.addActionListener(new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                try {
-                                    dos.writeUTF(newQtyBox.getText());
-                                    JOptionPane.showMessageDialog(null, "Store deleted successfully.");
+                    Product editedProduct = null;
+                    for (Product product : store.getProducts()) {
+                        if (selectedProduct.equals(product.productPage())) {
+                            editedProduct = product;
 
-                                } catch (IOException ex) {
-                                    throw new RuntimeException(ex);
-                                }
-                            }
-                        });
+                            // replaces old product in combo box with new product
+                            comboBox.removeItem(selectedProduct);
+                            editedProduct.setDescription(newProductDescription.getText());
+                            comboBox.addItem(editedProduct.productPage());
+
+                            //replaces old product in the store with the new product
+                            store.getProducts().set(store.getProducts().indexOf(product), editedProduct);
+
+                        }
+                    }
+
+                }
+
+                // probably need to write to seller database with updated store and seller object:
+
+            });
+
+            changeProductQuantity.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String selectedProduct = (String) comboBox.getSelectedItem();
+
+                    Product editedProduct = null;
+                    for (Product product : store.getProducts()) {
+                        if (selectedProduct.equals(product.productPage())) {
+                            editedProduct = product;
+
+                            // replaces old product in combo box with new product
+                            comboBox.removeItem(selectedProduct);
+                            editedProduct.setQuantityForPurchase(Integer.parseInt(newProductQuantity.getText()));
+                            comboBox.addItem(editedProduct.productPage());
+
+                            //replaces old product in the store with the new product
+                            store.getProducts().set(store.getProducts().indexOf(product), editedProduct);
+
+                        }
+                    }
+
+                }
+
+                // probably need to write to seller database with updated store and seller object:
+
+            });
+
+            deleteProductButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String selectedProduct = (String) comboBox.getSelectedItem();
+
+                    for (Product product : store.getProducts()) {
+                        if (selectedProduct.equals(product.productPage())) {
+                            comboBox.removeItem(selectedProduct);
+                            store.getProducts().remove(product);
+
+                        }
                     }
                 }
-            }
+
+                // probably need to write to seller database with updated store and seller object:
+
+            });
+
+            createNewProductButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    // need seller database here:
+                    ArrayList<Seller> database = new ArrayList<>();
+
+                    String name = JOptionPane.showInputDialog(null, "What is the name?");
+
+                    String description = JOptionPane.showInputDialog(null, "What is the description?");
+
+                    String stockString = JOptionPane.showInputDialog(null, "How many items in stock?");
+                    int stock = Integer.parseInt(stockString);
+
+                    String priceString = JOptionPane.showInputDialog(null, "How much does this item cost?");
+                    double price = Double.parseDouble(priceString);
+
+                    int uniqueID = getProductDatabase(database).size() + 1;
+
+                    Product product = new Product(name, description, stock, price, 0, uniqueID);
+                    store.getProducts().add(product);
+                    comboBox.addItem(product.productPage());
+
+                }
+
+                // then need to update database:
+
+            });
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
 
         }
+
     }
+}
 
 
