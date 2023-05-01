@@ -111,6 +111,7 @@ class ClientHandler extends Thread {
                     bw.flush();
 
                     String email = bfr.readLine();
+                    String password = bfr.readLine();
                     User user = null;
                     for (User parse : loginDatabase) {
                         if (user.getEmail().equals(email)) {
@@ -118,7 +119,18 @@ class ClientHandler extends Thread {
                             break;
                         }
                     }
-                    bw.write(user.constructorString());
+                    if (user == null) {
+                        bw.write("noAccount\n");
+                        bw.flush();
+                    } else {
+                        if (user.getPassword().equals(password)) {
+                            bw.write(user.constructorString());
+                            bw.write("\n");
+                            bw.flush();
+                        } else {
+                            bw.write("incorrectPassword");
+                        }
+                    }
                     bw.flush();
 
 

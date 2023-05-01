@@ -50,6 +50,16 @@ public class Client extends JComponent implements Runnable {
         return user;
     }
 
+    public String[] getEmailPassword() {
+        return emailPassword;
+    }
+
+    public void setEmailPassword(String[] emailPassword) {
+        this.emailPassword = emailPassword;
+    }
+
+    private String[] emailPassword = new String[2];
+
     public void setUser(User user) {
         this.user = user;
     }
@@ -180,7 +190,7 @@ public class Client extends JComponent implements Runnable {
         return new User(data.split(", "));
     }
 
-    public void sendServer(String option) throws IOException {
+    public boolean sendServer(String option) throws IOException {
         BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
         String toServer = "";
@@ -236,8 +246,20 @@ public class Client extends JComponent implements Runnable {
             bw.flush();
         } else if (action.equals("sendLogin")) {
             //send login information
-            bw.write(this.getLoginDetails().constructorString());
+            bw.write(emailPassword[0]);
+            bw.write("\n");
             bw.flush();
+            bw.write(emailPassword[1]);
+            bw.write("\n");
+            bw.flush();
+
+            String loginConfirmation = bfr.readLine();
+            if (loginConfirmation.equals("loginError")) {
+                return false;
+            } else {
+                setLoginDetails(new User(loginConfirmation.split(", ")));
+                return true;
+            }
 
         } else if (action.equals("sendBuyer")) {
             //send buyer information
@@ -256,6 +278,7 @@ public class Client extends JComponent implements Runnable {
             bw.write(option.substring(1, option.length() - 1));
             bw.flush();
         }
+        return false;
     }
 
 
@@ -969,8 +992,6 @@ public class Client extends JComponent implements Runnable {
         private Client client;
         private JTextField emailField;
         private JPasswordField passwordField;
-        private JTextField nameField;
-        private JTextField ageField;
         private JButton loginButton;
 
         public BuyerLoginCredentials(Client client) {
@@ -978,18 +999,13 @@ public class Client extends JComponent implements Runnable {
             this.client = client;
             emailField = new JTextField(20);
             passwordField = new JPasswordField(20);
-            nameField = new JTextField(20);
-            ageField = new JTextField(3);
+
             loginButton = new JButton("Enter");
             JPanel panel = new JPanel();
             panel.add(new JLabel("Email:"));
             panel.add(emailField);
             panel.add(new JLabel("Password:"));
             panel.add(passwordField);
-            panel.add(new JLabel("Name:"));
-            panel.add(nameField);
-            panel.add(new JLabel("Age:"));
-            panel.add(ageField);
             panel.add(loginButton);
             add(panel);
 
@@ -998,20 +1014,23 @@ public class Client extends JComponent implements Runnable {
                 public void actionPerformed(ActionEvent e) {
                     User user = null;
                     try {
-                        client.sendServer(String.format("*%s", emailField.getText()));
+                        String[] x = {emailField.getText(), passwordField.getText()};
+                        client.setEmailPassword(x);
+                        boolean loginSuccess = client.sendServer("sendLogin");
 
-                        user = client.getUser();
+                        if (loginSuccess) {
+                            user = client.getLoginDetails();
+                            BuyerGUI buyerGUI = new BuyerGUI(user, client);
+                            buyerGUI.setVisible(true);
+                            dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Incorrect Email or Password. Please try again!", "LoginError!", JOptionPane.ERROR_MESSAGE);
+                        }
                         // maybe pass the User as an argument to the BuyerGUI class, so we can use it in marketplace
 
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
-
-                    BuyerGUI buyerGUI = new BuyerGUI(user, client);
-                    buyerGUI.setVisible(true);
-                    dispose();
-
-
                 }
             });
 
