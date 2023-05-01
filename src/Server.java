@@ -72,14 +72,13 @@ class ClientHandler extends Thread {
             ArrayList<Product> productDatabase = getProductDatabase(sellerDatabase);
             ArrayList<User> loginDatabase;
 
-
-            System.out.println("check");
             BufferedReader bfr = new BufferedReader(new InputStreamReader(input));
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(output));
             String action;
             String data = "";
 
             boolean isSeller = Boolean.parseBoolean(bfr.readLine());
+            System.out.println(isSeller);
 
 
             while (true) {
