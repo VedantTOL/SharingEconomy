@@ -427,6 +427,91 @@ public class Client extends JComponent implements Runnable {
             setLocationRelativeTo(null);
         }
     }
+    /*
+    deleteAccountButton.addActionListener((new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            int reply = JOptionPane.showConfirmDialog(null,
+                    "Are you sure you want to delete your account?", "Delete account",
+                    JOptionPane.YES_NO_OPTION);
+            if (reply == JOptionPane.YES_OPTION) {
+                Window window = SwingUtilities.windowForComponent(deleteAccountButton);
+                window.dispose();
+                // TODO server for delete account
+                client.sendServer(String.format("+%s", user.constructorString()));
+            } else if (reply == JOptionPane.NO_OPTION) {
+
+            }
+        }
+    }));
+
+     */
+    private static class editAccount extends JPanel {
+        private JTextField emailField;
+        private JPasswordField passwordField;
+        private JTextField nameField;
+        private JTextField ageField;
+        private JButton saveButton;
+        private Client client;
+
+        public editAccount(User user, Client client) {
+            this.client = client;
+            setLayout(new GridLayout(5, 2));
+            emailField = new JTextField(user.getEmail(), 20);
+            passwordField = new JPasswordField(user.getPassword(), 20);
+            nameField = new JTextField(user.getName(), 20);
+            ageField = new JTextField(Integer.toString(user.getAge()), 3);
+            saveButton = new JButton("Save");
+
+            add(new JLabel("New Email:"));
+            add(emailField);
+            add(new JLabel("New Password:"));
+            add(passwordField);
+            add(new JLabel("New Name:"));
+            add(nameField);
+            add(new JLabel("New Age:"));
+            add(ageField);
+            add(new JPanel()); // empty panel for spacing
+            add(saveButton);
+
+            saveButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // get updated values from text fields
+                    String email = emailField.getText();
+                    String password = new String(passwordField.getPassword());
+                    String name = nameField.getText();
+                    int age = Integer.parseInt(ageField.getText());
+
+                    // update user object
+                    user.setEmail(email);
+                    user.setPassword(password);
+                    user.setName(name);
+                    user.setAge(age);
+
+
+
+                    // save changes to database or file
+                    // ...
+                    client.setLoginDetails(user);
+                    try {
+                        client.sendServer(String.format("-%s", user.constructorString()));
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
+                    // display confirmation message
+                    JOptionPane.showMessageDialog(null, "Changes saved successfully!");
+
+                    // create a new instance of the BuyerGUI and dispose the current frame
+                    BuyerGUI buyerGUI = new BuyerGUI(user, client);
+                    buyerGUI.setVisible(true);
+                    JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(editAccount.this);
+                    frame.dispose();
+                }
+            });
+        }
+    }
 
     private static class BuyerGUI extends JFrame {
         private Client client;
