@@ -5,15 +5,15 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.zip.DataFormatException;
-
 
 public class Server {
 
 
-
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = new ServerSocket(4242);
+        serverSocket.setReuseAddress(true);
 
         while (true) {
 
@@ -21,12 +21,12 @@ public class Server {
 
             try {
                 socket = serverSocket.accept();
-                System.out.println("Client connected");
+
 
                 DataInputStream dis = new DataInputStream(socket.getInputStream());
                 DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 
-                System.out.println("Now assigning a new thread to the client");
+
 
                 Thread t = new ClientHandler(dis, dos, socket);
 
@@ -46,9 +46,9 @@ class ClientHandler extends Thread {
     final Socket socket;
 
 
-    ClientHandler(DataInputStream input, DataOutputStream output, Socket socket) {
-        this.input = input;
-        this.output = output;
+    ClientHandler(DataInputStream input, DataOutputStream output, Socket socket) throws IOException {
+        this.input = new DataInputStream(socket.getInputStream());
+        this.output = new DataOutputStream(socket.getOutputStream());
         this.socket = socket;
     }
 
@@ -63,6 +63,7 @@ class ClientHandler extends Thread {
         ClientHandler server = new ClientHandler();
 
         try {
+
             boolean newWrite = false;
             ArrayList<Seller> sellerDatabase = readSellerDatabase();
             ArrayList<Buyer> buyerDatabase = readBuyerDatabase();
@@ -73,8 +74,15 @@ class ClientHandler extends Thread {
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(output));
             String action;
             String data = "";
-            String sellerCheck = bfr.readLine();
-            boolean isSeller = sellerCheck.equals("seller");
+            String sellx = bfr.readLine();
+            boolean isSeller = false;
+            if (sellx.equals("true")) {
+                isSeller = true;
+            } else if (sellx.equals("false")) {
+                isSeller = false;
+            }
+
+
             while (true) {
                 data = "";
                 action = bfr.readLine();
@@ -83,9 +91,6 @@ class ClientHandler extends Thread {
                     //end thread
                 } else if (action.equals("sendSeller")) {
                     //send all seller data
-
-                    bw.write("sellerDatabase\n");
-                    bw.flush();
 
                     if (newWrite) {
                         sellerDatabase = readSellerDatabase();
@@ -101,18 +106,29 @@ class ClientHandler extends Thread {
                 } else if (action.equals("sendLogin")) {
                     //send login information
                     loginDatabase = getInformation(isSeller);
-                    bw.write("loginDatabase\n");
-                    bw.flush();
+
 
                     String email = bfr.readLine();
+                    String password = bfr.readLine();
                     User user = null;
                     for (User parse : loginDatabase) {
-                        if (user.getEmail().equals(email)) {
+                        if (parse.getEmail().equals(email)) {
                             user = parse;
                             break;
                         }
                     }
-                    bw.write(user.constructorString());
+                    if (user == null) {
+                        bw.write("loginError\n");
+                        bw.flush();
+                    } else {
+                        if (user.getPassword().equals(password)) {
+                            bw.write(user.constructorString());
+                            bw.write("\n");
+                            bw.flush();
+                        } else {
+                            bw.write("loginError");
+                        }
+                    }
                     bw.flush();
 
 
@@ -121,11 +137,12 @@ class ClientHandler extends Thread {
                     if (newWrite) {
                         buyerDatabase = readBuyerDatabase();
                     }
-                    bw.write("buyerDatabase\n");
-                    bw.flush();
+
                     for (Buyer buyer : buyerDatabase) {
                         data = data.concat(buyer.serverString());
+                        data = data.concat("\n");
                     }
+
                     bw.write(data);
                     bw.write("end\n");
                     bw.flush();
@@ -139,23 +156,59 @@ class ClientHandler extends Thread {
                 } else if (action.equals("loginDatabase")) {
                     server.setLoginDetails(server.getUserInfo(bfr.readLine()), isSeller);
                     newWrite = true;
+                } else if (action.equals("changeAccount")) {
+
+                    String user = bfr.readLine();
+                    User change = new User(user.split(", "));
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    for (User x: userDB) {
+                        if (change.getUniqueIdentifier() == x.getUniqueIdentifier()) {
+                            userDB.remove(x);
+                            userDB.add(change);
+                        }
+                    }
+                    updateLoginDatabase(userDB, isSeller);
+                } else if (action.equals("deleteAccount")) {
+                    bw.write("deleteAccount\n");
+                    bw.flush();
+                    String user = bfr.readLine();
+                    User delete = new User(user.split(", "));
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    for (User x: userDB) {
+                        if (delete.getUniqueIdentifier() == x.getUniqueIdentifier()) {
+                            userDB.remove(x);
+                        }
+                    }
+                    updateLoginDatabase(userDB, isSeller);
+                } else if (action.equals("getUniqueInt")) {
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    bw.write(String.valueOf(userDB.size()));
+                    bw.write("\n");
+                    bw.flush();
+                } else if (action.equals("confirmUser")) {
+                    String nex = bfr.readLine();
+                    User newUser = new User(nex.split(","));
+                    ArrayList<User> userDB = getInformation(isSeller);
+                    userDB.add(newUser);
+                    updateLoginDatabase(userDB, isSeller);
                 }
             }
+
         } catch (IOException | DataFormatException e) {
             e.printStackTrace();
         }
-
-
     }
 
     public static ArrayList<String> parseServer(BufferedReader bfr) throws IOException {
         ArrayList<String> data = new ArrayList<String>();
         String line;
+
         do {
             line = bfr.readLine();
             if (line == "" || line == null || line.equals("end")) {
                 break;
             }
+
             data.add(line);
         } while (true);
         return data;
@@ -196,7 +249,7 @@ class ClientHandler extends Thread {
                     product = new Product(line.split(", "));
                     database.get(sellerIndex).getStores().get(storeIndex).addProduct(product);
                 } catch (DataFormatException e) {
-                    System.out.println("Seller Database Malformed!");
+
                 }
             }
         }
@@ -272,16 +325,16 @@ class ClientHandler extends Thread {
         return new User(data.split(", "));
     }
 
-    public static ArrayList<Product> getProductDatabase(ArrayList<Seller> database) {
-
+    public static ArrayList<Product> getProductDatabase(ArrayList<Seller> sellerDB) {
         ArrayList<Product> productDatabase = new ArrayList<Product>();
-        for (Seller seller: database) {
+        for (Seller seller: sellerDB) {
             for (Store store : seller.getStores()) {
                 for (Product product : store.getProducts()) {
                     productDatabase.add(product);
                 }
             }
         }
+        productDatabase.sort(Comparator.<Product>comparingInt(Product::getUniqueID));
         return productDatabase;
     }
 
@@ -327,7 +380,7 @@ class ClientHandler extends Thread {
                         product = new Product(line.split(", "));
                         database.get(sellerIndex).getStores().get(storeIndex).addProduct(product);
                     } catch (DataFormatException e) {
-                        System.out.println("Seller Database Malformed!");
+
                     }
                 }
 
@@ -412,7 +465,7 @@ class ClientHandler extends Thread {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
+        bfr.close();
         return database;
     }
 
@@ -457,6 +510,30 @@ class ClientHandler extends Thread {
     }
 
     public void setSellerDatabase(ArrayList<Seller> sellerDatabase) {
+        ArrayList<Buyer> purchaseQuantity = getBuyerDatabase();
+        ArrayList<Product> products = getProductDatabase(sellerDatabase);
+        Product toChange;
+
+
+        for (Buyer buyer: purchaseQuantity){
+            for (ProductPurchase px: buyer.getPurchases()) {
+                toChange = px;
+                toChange.addPurchase(px.getOrderQuantity());
+                products.set(px.getUniqueID() - 1, toChange);
+            }
+        }
+        int i;
+        for (Seller seller: sellerDatabase) {
+            for (i = 0; i < seller.getStores().size(); i++) {
+                ArrayList<Product> tempStore = seller.getStores().get(i).getProducts();
+                for (Product product: tempStore) {
+                    int m = tempStore.indexOf(product);
+                    sellerDatabase.get(seller.getUniqueIdentifier()).getStores().get(i).getProducts().set(m, products.get(product.getUniqueID() - 1));
+                }
+            }
+        }
+
+
         try {
             BufferedWriter toFile = new BufferedWriter(new FileWriter("./src/SellerDatabase.txt"));
             for (Seller seller : sellerDatabase) {
@@ -479,6 +556,7 @@ class ClientHandler extends Thread {
             BufferedWriter toFile = new BufferedWriter(new FileWriter("./src/BuyerDatabase.txt"));
             for (Buyer buyer : buyerDatabase) {
                 toFile.write(buyer.serverString());
+                toFile.write("\n");
                 toFile.flush();
             }
             toFile.close();
@@ -533,6 +611,7 @@ class ClientHandler extends Thread {
         }
 
         try {
+            boolean newUser = false;
             toFile = new BufferedWriter(new FileWriter(filename));
             for (User k: result) {
                 toFile.write(k.constructorString());
@@ -546,9 +625,33 @@ class ClientHandler extends Thread {
         this.loginDetails = loginDetails;
     }
 
+    public void updateLoginDatabase(ArrayList<User> userDB, boolean isSeller) {
+        BufferedWriter toFile;
+        String filename;
+
+        if (isSeller) {
+            filename = "./src/SellerLogin.txt";
+        } else {
+            filename = "./src/BuyerLogin.txt";
+        }
+
+        try {
+            toFile = new BufferedWriter(new FileWriter(filename));
+            for (User k: userDB) {
+                toFile.write(k.constructorString());
+                toFile.write("\n");
+            }
+            toFile.close();
+
+        } catch (IOException e) {
+            return;
+        }
+
+    }
 
     private ArrayList<Seller> sellerDatabase;
     private ArrayList<Buyer> buyerDatabase;
     private User loginDetails;
 
 }
+

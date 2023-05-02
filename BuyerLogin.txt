@@ -1,2 +1,5 @@
-0, glrsaunited@gmail.com, hades31, Rog, 22
-1, hades31@gmail.com, glrsa, lilRog, 22
+0, glrsaunited@gmail.com, hades31, Rog, 22, 0
+1, hades31@gmail.com, glrsa, lilRog, 22, 0
+2, john@purdue, 1234, john, 233, 0
+3, oik22@fodk, 1234, ofod, 12, 0
+4, yamum@purdue, whassup, Roggy, 12, 0

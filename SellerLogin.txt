@@ -1,2 +1,2 @@
-0, john@purdue, 1234, john, 25
+0, ahn@purdue, 1234, johan, 25
 1, customer1@email, 1234, customer1, 49

@@ -63,7 +63,7 @@ public class Buyer extends User {
     public ArrayList<Buyer> readBuyerDatabase() throws DataFormatException, IOException {
 
         ArrayList<Buyer> database = new ArrayList<Buyer>();
-        ArrayList<Product> productDatabase = getProductDatabase();
+//        ArrayList<Product> productDatabase = getProductDatabase();
 
         String line;
         Buyer buyer = null;
@@ -194,26 +194,26 @@ public class Buyer extends User {
 
  */
 
-    public ArrayList<Product> getProductDatabase() {
-        ArrayList<Seller> database = null;
-        try {
-             database = readSellerDatabase();
-        } catch (NoSellers e) {
-            return null;
-        }
-        ArrayList<Product> productDatabase = new ArrayList<Product>();
-        if (database == null) {
-            return null;
-        }
-        for (Seller seller: database) {
-            for (Store store : seller.getStores()) {
-                for (Product product : store.getProducts()) {
-                    productDatabase.add(product);
-                }
-            }
-        }
-        return productDatabase;
-    }
+//    public ArrayList<Product> getProductDatabase() {
+//        ArrayList<Seller> database = null;
+//        try {
+//             database = readSellerDatabase();
+//        } catch (NoSellers e) {
+//            return null;
+//        }
+//        ArrayList<Product> productDatabase = new ArrayList<Product>();
+//        if (database == null) {
+//            return null;
+//        }
+//        for (Seller seller: database) {
+//            for (Store store : seller.getStores()) {
+//                for (Product product : store.getProducts()) {
+//                    productDatabase.add(product);
+//                }
+//            }
+//        }
+//        return productDatabase;
+//    }
 
     public ArrayList<Product> viewMarketPlace(int choice, ArrayList<Seller> database) {
         if (choice == 1) {
@@ -776,7 +776,7 @@ public class Buyer extends User {
         return purchases;
     }
 
-    public Seller shopBySeller(Scanner scanner, ArrayList<Seller> databaseSeller) {
+    public Seller shopBySeller(ArrayList<Seller> databaseSeller) {
 
         // add a do while to take into account "No seller found with the name: "
 
@@ -824,8 +824,6 @@ public class Buyer extends User {
 
         return null;
     }
-
-
     public static int readInt(String input) {
         int result;
         try {
@@ -837,6 +835,28 @@ public class Buyer extends User {
                     "ERROR!", JOptionPane.ERROR_MESSAGE);
             return -1;
         }
+    }
+
+    public String serverString() {
+        String id = String.format("* %d\n", this.getUniqueIdentifier());
+        String shopping = "+";
+        String purchased = "-";
+        for (ProductPurchase product: this.getPurchases()){
+            purchased = purchased.concat(String.format("%d:%d, ", product.getUniqueID(), product.getOrderQuantity()));
+        }
+        purchased = purchased.substring(0, purchased.length() - 2);
+        for (ProductPurchase product: this.getShoppingCart()){
+            shopping = shopping.concat(String.format("%d:%d, ", product.getUniqueID(), product.getOrderQuantity()));
+        }
+        try {
+            shopping = shopping.substring(0, shopping.length() - 2);
+            id = id.concat(shopping);
+            id = id.concat("\n");
+            id = id.concat(purchased);
+        } catch (StringIndexOutOfBoundsException e) {
+            // do nothing
+        }
+        return id;
     }
 
 }
