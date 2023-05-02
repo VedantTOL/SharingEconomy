@@ -436,24 +436,109 @@ public class Client extends JComponent implements Runnable {
         }
     }
 
+    private static class buyerEditAccount extends JFrame {
+        private JButton editEmailButton;
+        private JButton editPasswordButton;
+        private JButton previousPageButton;
+        private Buyer buyer;
+
+        public buyerEditAccount(Buyer buyer) {
+            super("Edit Account");
+            this.buyer = buyer;
+            editEmailButton = new JButton("Enter new email");
+            editPasswordButton = new JButton("Enter new password");
+            previousPageButton = new JButton("Go back");
+
+            JPanel panel = new JPanel();
+            panel.add(editEmailButton);
+            panel.add(editPasswordButton);
+            panel.add(previousPageButton);
+            add(panel);
+
+            editEmailButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    String newEmail = JOptionPane.showInputDialog("Enter your new email");
+                    buyer.setEmail(newEmail);
+                    dispose();
+
+                }
+
+                // maybe update database
+            });
+
+            editPasswordButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    String newPassword = JOptionPane.showInputDialog("Enter your new password");
+                    buyer.setPassword(newPassword);
+                    dispose();
+
+                }
+
+                // maybe update database
+            });
+
+        }
+    }
+
     private static class BuyerGUI extends JFrame {
         private JButton marketPlaceButton;
         private JButton shopBySellerButton;
-        private JButton deleteAccountButton;
         private User user;
+
+        private ArrayList<Seller> requestSellerDatabase() {
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+            BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+            try {
+                bw.write("sendSeller\n");
+                bw.flush();
+                return sellerServerRead(parseServer(bfr));
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
+        private Buyer createBuyer(User user, double balance) {
+            Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                    user.getAge(), balance);
+
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+            BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+            ArrayList<Buyer> db = null;
+            try {
+                bw.write("sendBuyer\n");
+                bw.flush();
+                db =  buyerServerRead(parseServer(bfr));
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            for (Buyer k: db) {
+                if (k.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
+                    buyer.setPurchases(k.getPurchases());
+                    buyer.setShoppingCart(k.getShoppingCart());
+                }
+            }
+
+            return buyer;
+
+        }
 
         public BuyerGUI(User user) {
             super("Would you like to view the whole marketplace or shop by seller?");
             marketPlaceButton = new JButton("View the whole marketplace");
             shopBySellerButton = new JButton("Shop by seller");
-            deleteAccountButton = new JButton("Delete Account");
 
             this.user = user;
             JPanel panel = new JPanel();
             panel.add(marketPlaceButton);
             panel.add(shopBySellerButton);
-            panel.add(deleteAccountButton);
-
             add(panel);
 
             marketPlaceButton.addActionListener(new ActionListener() {
@@ -463,20 +548,23 @@ public class Client extends JComponent implements Runnable {
                     String bal = JOptionPane.showInputDialog(null, "What is your budget?",
                             "Budget Information", JOptionPane.QUESTION_MESSAGE);
 
-                    double balance = Double.parseDouble(bal);
+                    double balance = 0;
+                    try {
+                        balance = Double.parseDouble(bal);
+                        Buyer buyer = createBuyer(user, balance);
 
-                    // creating buyer object from user data that was generated in the login frame
-                    Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
-                            user.getAge(), balance);
+                        // generate new marketplace JFrame here to show what is in the marketplace
+                        marketPlace marketPlace = new marketPlace(buyer);
+                        marketPlace.setVisible(true);
+                        dispose();
 
-
-                    // generate new marketplace JFrame here to show what is in the marketplace
-                    marketPlace marketPlace = new marketPlace(buyer);
-                    marketPlace.setVisible(true);
-                    dispose();
-
-
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(null, "Please enter a valid number!",
+                                "NumberError!", JOptionPane.ERROR_MESSAGE);
+                    }
                 }
+
+
             });
 
             shopBySellerButton.addActionListener(new ActionListener() {
@@ -489,12 +577,10 @@ public class Client extends JComponent implements Runnable {
                     double balance = Double.parseDouble(bal);
 
                     // creating buyer object from user data that was generated in the login frame
-                    Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
-                            user.getAge(), balance);
+                    Buyer buyer = createBuyer(user, balance);
 
                     // generate list of sellers from database here:
-                    ArrayList<Seller> sellers = new ArrayList<>();
-
+                    ArrayList<Seller> sellers = requestSellerDatabase();
 
                     // generate new shop by seller Jframe here to allow the buyer to search for a seller
                     shopBySeller bySeller = new shopBySeller(sellers, buyer);
@@ -503,33 +589,13 @@ public class Client extends JComponent implements Runnable {
                 }
             });
 
-            deleteAccountButton.addActionListener((new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    // balance can be 0 since the account is going to either be deleted or buyer will be created in another method
-                    int balance = 0;
-
-                    Buyer buyer = new Buyer(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
-                            user.getAge(), balance);
-
-                    int reply = JOptionPane.showConfirmDialog(null,
-                            "Are you sure you want to delete your account?", "Delete account",
-                            JOptionPane.YES_NO_OPTION);
-                    if (reply == JOptionPane.YES_OPTION) {
-                        Window window = SwingUtilities.windowForComponent(deleteAccountButton);
-                        window.dispose();
-                        // TODO server for buyer delete account
-
-                    }
-                }
-            }));
-
             setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             pack();
             setLocationRelativeTo(null);
 
         }
     }
+
 
     private static class marketPlace extends JFrame {
         private JButton viewAllProductsButton;
@@ -597,13 +663,15 @@ public class Client extends JComponent implements Runnable {
             searchForProductsButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    // read database in to here:
 
+
+                    //getting stuck here
                     ArrayList<Seller> database = requestSellerDatabase();
+
 
                     int choice = 2;
 
-                    ArrayList<Product> productList = processProduct(buyer, choice, database);
+                    ArrayList<Product> productList = buyer.viewMarketPlace(choice, database);
                     if (productList == null) {
                         JOptionPane.showMessageDialog(null, "Sorry! Sellers have not yet posted anything to the marketplace.\n" +
                                         "Come back later when sellers have stocked their stores!\n" + "Logging you out...\n",
@@ -617,14 +685,12 @@ public class Client extends JComponent implements Runnable {
 
                 }
 
-                private ArrayList<Product> processProduct(Buyer buyer, int choice, ArrayList<Seller> database) {
-                    return buyer.viewMarketPlace(choice, database);
-                }
-
                 private ArrayList<Seller> requestSellerDatabase() {
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
                     BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
                     try {
-                        dos.writeUTF("sendSeller\n");
+                        bw.write("sendSeller\n");
+                        bw.flush();
                         return sellerServerRead(parseServer(bfr));
 
                     } catch (IOException e) {
@@ -664,7 +730,9 @@ public class Client extends JComponent implements Runnable {
                 public void actionPerformed(ActionEvent e) {
                     String purchasesString = "";
                     for (ProductPurchase productPurchase : buyer.getPurchases()) {
-                        purchasesString = purchasesString + productPurchase.getName() + " " + productPurchase.getPrice() + "\n";
+                        purchasesString = purchasesString.concat(productPurchase.viewOrder());
+                        purchasesString = purchasesString.concat("\n");
+
                     }
 
                     JOptionPane.showMessageDialog(null, purchasesString,
@@ -679,6 +747,7 @@ public class Client extends JComponent implements Runnable {
 
         }
     }
+
 
     private static class shopBySeller extends JFrame {
         private JComboBox<String> sellerComboBox;
@@ -795,6 +864,70 @@ public class Client extends JComponent implements Runnable {
     }
 
     private static class addToCartOrPurchase extends JFrame {
+        private void coreProcess(Buyer buyer, ArrayList<Buyer> buyerDatabase) {
+            for (Buyer c : buyerDatabase) {
+                if (c.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
+                    buyerDatabase.remove(c);
+                    buyerDatabase.add(buyer);
+                    break;
+                }
+            }
+
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+            BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+            String toServer = "";
+
+            try {
+                toServer = "";
+                bw.write("writeBuyer\n");
+                for (Buyer k : buyerDatabase) {
+                    toServer = toServer.concat(k.serverString());
+                    toServer = toServer.concat("\n");
+                }
+                bw.write(toServer);
+                bw.write("end\n");
+                bw.flush();
+                toServer = "";
+                bw.write("writeSeller\n");
+                for (Seller m: sellers) {
+                    toServer = toServer.concat(m.serverString());
+                }
+                bw.write(toServer);
+                bw.write("end\n");
+                bw.flush();
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private ArrayList<Seller> requestSellerDatabase() {
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+            BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+            try {
+                bw.write("sendSeller\n");
+                bw.flush();
+                return sellerServerRead(parseServer(bfr));
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+
+        private ArrayList<Buyer> requestBuyerDatabase() {
+
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+            BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+            try {
+                bw.write("sendBuyer\n");
+                bw.flush();
+                return buyerServerRead(parseServer(bfr));
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         private JButton addToCartButton;
         private JButton purchaseNowButton;
         private JButton previousPageButton;
@@ -861,35 +994,125 @@ public class Client extends JComponent implements Runnable {
                     continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer);
                     continueShoppingEtc.setVisible(true);
                     dispose();
-
                 }
 
-                private void coreProcess(Buyer buyer, ArrayList<Buyer> buyerDatabase) {
-                    for (Buyer c : buyerDatabase) {
-                        if (c.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
-                            buyerDatabase.remove(c);
-                            buyerDatabase.add(buyer);
-                            break;
+            });
+
+
+            purchaseNowButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed (ActionEvent e){
+                    String selectedItem = (String) comboBox.getSelectedItem();
+
+
+                    Product product1 = null;
+                    for (Product product : productList) {
+                        if (selectedItem.equals(product.marketplaceString())) {
+                            product1 = product;
                         }
                     }
-                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
-                    BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                    String toServer = "";
 
-                    try {
-                        bw.write("writeBuyer\n");
-                        for (Buyer k : buyerDatabase) {
-                            toServer.concat(k.serverString());
-                        }
-                        bw.write(toServer);
-                        bw.write("\n");
-                        bw.flush();
+                    // read database from server here:
+                    ArrayList<Seller> database;
+                    database = requestSellerDatabase();
 
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    Store store = buyer.viewStore(product1, database);
+
+
+                    int numProductsForPurchase;
+                    String numProductsForPurchases;
+                    do {
+                        do {
+                            numProductsForPurchases = JOptionPane.showInputDialog(null,
+                                    "How many of " + product1.getName() + " would you like to purchase?\n",
+                                    "Purchase now", JOptionPane.QUESTION_MESSAGE);
+                            if (numProductsForPurchases == null || numProductsForPurchases.isEmpty()) {
+                                JOptionPane.showMessageDialog(null, "Please enter an option before continuing!",
+                                        "ERROR!", JOptionPane.ERROR_MESSAGE);
+                            }
+                        } while (numProductsForPurchases == null || numProductsForPurchases.isEmpty());
+
+                        numProductsForPurchase = readInt(numProductsForPurchases);
+                    } while (numProductsForPurchase == -1);
+
+                    buyer.buyProduct(product1, numProductsForPurchase, store, database);
+
+                    ArrayList<Buyer> buyerDatabase = requestBuyerDatabase();
+
+//                    for (ProductPurchase k: buyer.getPurchases()) {
+//                        System.out.println(k.viewOrder());
+//                    }
+
+                    coreProcess(buyer, buyerDatabase);
+
+                    continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer);
+                    continueShoppingEtc.setVisible(true);
+                    dispose();
+
                 }
+            });
 
+            previousPageButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed (ActionEvent e){
+
+                    marketPlace marketPlace = new marketPlace(buyer);
+                    marketPlace.setVisible(true);
+                    dispose();
+
+
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+            pack();
+
+            setLocationRelativeTo(null);
+
+        }
+    }
+
+    private static class continueShoppingEtc extends JFrame {
+        private JButton continueShoppingButton;
+        private JButton viewCartButton;
+        private JButton viewPurchasesButton;
+        private JButton logOutButton;
+
+
+        public continueShoppingEtc(Buyer buyer) {
+            super("Continue Shopping?");
+
+            continueShoppingButton = new JButton("Continue shopping: Marketplace menu");
+            viewCartButton = new JButton("View your cart");
+            viewPurchasesButton = new JButton("View your purchases");
+            logOutButton = new JButton("Log Out");
+
+            JPanel panel = new JPanel();
+            panel.add(continueShoppingButton);
+            panel.add(viewCartButton);
+            panel.add(viewPurchasesButton);
+            panel.add(logOutButton);
+            add(panel);
+
+            continueShoppingButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    marketPlace marketPlace = new marketPlace(buyer);
+                    marketPlace.setVisible(true);
+                    dispose();
+                }
+            });
+
+            viewCartButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    ArrayList<Buyer> db = requestBuyerDatabase();
+
+                    buyerCart buyerCart = new buyerCart(buyer, db);
+                    buyerCart.setVisible(true);
+
+                }
 
                 private ArrayList<Buyer> requestBuyerDatabase() {
 
@@ -904,59 +1127,692 @@ public class Client extends JComponent implements Runnable {
                         throw new RuntimeException(e);
                     }
                 }
+            });
 
-                });
+            viewPurchasesButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String purchasesString = "";
+                    for (ProductPurchase productPurchase : buyer.getPurchases()) {
+                        purchasesString = purchasesString.concat(productPurchase.viewOrder());
+                        purchasesString = purchasesString.concat("\n");
+                    }
+
+                    JOptionPane.showMessageDialog(null, purchasesString,
+                            "Your Purchases", JOptionPane.INFORMATION_MESSAGE);
+
+                }
+            });
+
+            logOutButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // maybe some kind of method here that writes all changes to the database (may not be needed)
+                    JOptionPane.showMessageDialog(null, "Thank you, come again!",
+                            "Seeya!", JOptionPane.INFORMATION_MESSAGE);
+
+                    dispose();
+
+                }
+
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+
+        }
+    }
+
+    private static class buyerCart extends JFrame {
+
+        private void coreProcess(Buyer buyer, ArrayList<Buyer> buyerDatabase) {
+            for (Buyer c : buyerDatabase) {
+                if (c.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
+                    buyerDatabase.remove(c);
+                    buyerDatabase.add(buyer);
+                    break;
+                }
+            }
+
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+            BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+            String toServer = "";
+
+            try {
+                bw.write("writeBuyer\n");
+                for (Buyer k : buyerDatabase) {
+                    toServer = toServer.concat(k.serverString());
+                    toServer = toServer.concat("\n");
+                }
+                bw.write(toServer);
+                bw.write("end\n");
+                bw.flush();
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private ArrayList<Seller> requestSellerDatabase() {
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+            BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+            try {
+                bw.write("sendSeller\n");
+                bw.flush();
+                return sellerServerRead(parseServer(bfr));
 
 
-            purchaseNowButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed (ActionEvent e){
-                        String selectedItem = (String) comboBox.getSelectedItem();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
-                        Product product1 = null;
-                        for (Product product : productList) {
-                            if (selectedItem.equals(product.marketplaceString())) {
-                                product1 = product;
-                            }
+
+        private ArrayList<Buyer> requestBuyerDatabase() {
+
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+            BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+            try {
+                bw.write("sendBuyer\n");
+                bw.flush();
+                return buyerServerRead(parseServer(bfr));
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private JButton removeItemButton;
+        private JButton purchaseCartButton;
+        private JButton previousPageButton;
+        private JComboBox<String> comboBox;
+
+        private ArrayList<Buyer> buyerDatabase;
+
+        public buyerCart(Buyer buyer, ArrayList<Buyer> buyerDatabase) {
+            super("Your Shopping Cart");
+            removeItemButton = new JButton("Remove item");
+            purchaseCartButton = new JButton("Purchase cart");
+            previousPageButton = new JButton("Previous page");
+            comboBox = new JComboBox<>();
+            this.buyerDatabase = buyerDatabase;
+
+            for (ProductPurchase product : buyer.getShoppingCart()) {
+                comboBox.addItem(product.viewOrder());
+            }
+
+            JPanel panel = new JPanel();
+            panel.add(removeItemButton);
+            panel.add(purchaseCartButton);
+            panel.add(previousPageButton);
+            panel.add(comboBox);
+            add(panel);
+
+            removeItemButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String selectedItem = (String) comboBox.getSelectedItem();
+
+                    for (ProductPurchase product : buyer.getShoppingCart()) {
+                        if (selectedItem.equals(product.toString())) {
+                            buyer.removeFromShoppingCart(product);
+                            comboBox.removeItem(selectedItem);
+                        }
+                    }
+                    panel.updateUI();
+
+                    coreProcess(buyer, buyerDatabase);
+
+                }
+            });
+
+            purchaseCartButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // read database in to here:
+                    ArrayList<Seller> database = requestSellerDatabase();
+                    int result = 0;
+                    do {
+                        result = buyer.purchaseCart(database);
+                    } while (result == 1);
+
+                    comboBox.removeAll();
+                    dispose();
+
+                    coreProcess(buyer, buyerDatabase);
+
+                }
+
+            });
+
+            previousPageButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dispose();
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+        }
+    }
+
+    private static class LoginOptionSeller extends JFrame {
+        private JButton createAccountButton;
+        private JButton loginButton;
+
+        public LoginOptionSeller() {
+            super("Login or Create Account");
+            createAccountButton = new JButton("Create Account");
+            loginButton = new JButton("Login");
+
+            JPanel panel = new JPanel();
+            panel.add(createAccountButton);
+            panel.add(loginButton);
+            add(panel);
+
+            createAccountButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    SellerCreateAccountCredentials loginCredentials = new SellerCreateAccountCredentials();
+                    loginCredentials.setVisible(true);
+                    dispose();
+
+                }
+            });
+
+            loginButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    sellerLoginCredentials loginCredentials = new sellerLoginCredentials();
+                    loginCredentials.setVisible(true);
+                    dispose();
+
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+        }
+    }
+
+    private static class BuyerCreateAccountCredentials extends JFrame {
+        private JTextField emailField;
+        private JPasswordField passwordField;
+        private JTextField nameField;
+        private JTextField ageField;
+        private JButton loginButton;
+        private User user;
+
+        public BuyerCreateAccountCredentials() {
+            super("Enter New Login Credentials");
+            emailField = new JTextField(20);
+            passwordField = new JPasswordField(20);
+            nameField = new JTextField(20);
+            ageField = new JTextField(3);
+            loginButton = new JButton("Enter");
+            JPanel panel = new JPanel();
+            panel.add(new JLabel("Email:"));
+            panel.add(emailField);
+            panel.add(new JLabel("Password:"));
+            panel.add(passwordField);
+            panel.add(new JLabel("Name:"));
+            panel.add(nameField);
+            panel.add(new JLabel("Age:"));
+            panel.add(ageField);
+            panel.add(loginButton);
+            add(panel);
+
+            loginButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    User loginSuccess = null;
+                    try {
+                        char[] temp = passwordField.getPassword();
+                        loginSuccess = processLogin(emailField.getText(), new String(temp), nameField.getText(), Integer.parseInt(ageField.getText()));
+                        System.out.println("reached");
+                        BuyerGUI buyerGUI = new BuyerGUI(loginSuccess);
+                        buyerGUI.setVisible(true);
+                        dispose();
+
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+
+                }
+
+                private User processLogin(String email, String password, String name, int age) throws IOException {
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    BufferedReader btemp = new BufferedReader(new InputStreamReader(dis));
+                    bw.write("getUniqueInt\n");
+                    bw.flush();
+                    int uniqueID = Integer.parseInt(btemp.readLine());
+                    System.out.println(uniqueID);
+                    User user = new User(uniqueID, email, password, name, age);
+                    bw.write("confirmUser\n");
+                    bw.write(user.constructorString());
+                    bw.write("\n");
+                    bw.flush();
+                    return user;
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+        }
+    }
+
+    private static class BuyerLoginCredentials extends JFrame {
+        private JTextField emailField;
+        private JPasswordField passwordField;
+        private JButton loginButton;
+
+        public BuyerLoginCredentials() {
+            super("Enter New Login Credentials");
+            emailField = new JTextField(20);
+            passwordField = new JPasswordField(20);
+
+            loginButton = new JButton("Enter");
+            JPanel panel = new JPanel();
+            panel.add(new JLabel("Email:"));
+            panel.add(emailField);
+            panel.add(new JLabel("Password:"));
+            panel.add(passwordField);
+            panel.add(loginButton);
+            add(panel);
+
+            loginButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        char[] temp = passwordField.getPassword();
+                        User loginSuccess = processLogin(emailField.getText(), new String(temp));
+
+
+                        if (loginSuccess != null) {
+                            BuyerGUI buyerGUI = new BuyerGUI(loginSuccess);
+                            buyerGUI.setVisible(true);
+                            dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Incorrect Email or Password. Please try again!", "LoginError!", JOptionPane.ERROR_MESSAGE);
                         }
 
-                        // read database from server here:
-                        ArrayList<Seller> database;
-                        database = requestSellerDatabase();
-                        Store store = buyer.viewStore(product1, database);
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
 
-                        int numProductsForPurchase;
-                        String numProductsForPurchases;
-                        do {
-                            do {
-                                numProductsForPurchases = JOptionPane.showInputDialog(null,
-                                        "How many of " + product1.getName() + " would you like to purchase?\n",
-                                        "Purchase now", JOptionPane.QUESTION_MESSAGE);
-                                if (numProductsForPurchases == null || numProductsForPurchases.isEmpty()) {
-                                    JOptionPane.showMessageDialog(null, "Please enter an option before continuing!",
-                                            "ERROR!", JOptionPane.ERROR_MESSAGE);
-                                }
-                            } while (numProductsForPurchases == null || numProductsForPurchases.isEmpty());
+                private User processLogin(String email, String password) throws IOException {
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    bw.write("sendLogin\n");
+                    bw.write(email);
+                    bw.write("\n");
+                    bw.flush();
+                    bw.write(password);
+                    bw.write("\n");
+                    bw.flush();
+                    System.out.println(password);
 
-                            numProductsForPurchase = readInt(numProductsForPurchases);
-                        } while (numProductsForPurchase == -1);
+                    BufferedReader btemp = new BufferedReader(new InputStreamReader(dis));
+                    String loginConfirmation = btemp.readLine();
+                    if (loginConfirmation.equals("loginError")) {
+                        return null;
+                    } else {
+                        System.out.println(loginConfirmation);
+                        return new User(loginConfirmation.split(", "));
+                    }
 
-                        buyer.buyProduct(product1, numProductsForPurchase, store, database);
+                }
+            });
 
-                        ArrayList<Buyer> buyerDatabase = requestBuyerDatabase();
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+        }
+    }
 
-                        coreProcess(buyer, buyerDatabase);
 
-                        continueShoppingEtc continueShoppingEtc = new continueShoppingEtc(buyer);
-                        continueShoppingEtc.setVisible(true);
+    private static class SellerCreateAccountCredentials extends JFrame {
+        private JTextField emailField;
+        private JPasswordField passwordField;
+        private JTextField nameField;
+        private JTextField ageField;
+        private JButton loginButton;
+        private User user;
+
+        public SellerCreateAccountCredentials() {
+            super("Enter New Login Credentials");
+            emailField = new JTextField(20);
+            passwordField = new JPasswordField(20);
+            nameField = new JTextField(20);
+            ageField = new JTextField(3);
+            loginButton = new JButton("Enter");
+            JPanel panel = new JPanel();
+            panel.add(new JLabel("Email:"));
+            panel.add(emailField);
+            panel.add(new JLabel("Password:"));
+            panel.add(passwordField);
+            panel.add(new JLabel("Name:"));
+            panel.add(nameField);
+            panel.add(new JLabel("Age:"));
+            panel.add(ageField);
+            panel.add(loginButton);
+            add(panel);
+
+            loginButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    User loginSuccess = null;
+                    try {
+                        char[] temp = passwordField.getPassword();
+                        loginSuccess = processLogin(emailField.getText(), new String(temp), nameField.getText(), Integer.parseInt(ageField.getText()));
+
+                        SellerGUI sellerGUI = new SellerGUI(loginSuccess);
+                        sellerGUI.setVisible(true);
                         dispose();
+
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+
+                }
+
+                private User processLogin(String email, String password, String name, int age) throws IOException {
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    BufferedReader btemp = new BufferedReader(new InputStreamReader(dis));
+                    bw.write("getUniqueInt\n");
+                    bw.flush();
+                    int uniqueID = Integer.parseInt(btemp.readLine());
+                    System.out.println(uniqueID);
+                    User user = new User(uniqueID, email, password, name, age);
+                    bw.write("confirmUser\n");
+                    bw.write(user.constructorString());
+                    bw.write("\n");
+                    bw.flush();
+                    return user;
+                }
+
+
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+        }
+    }
+
+    private static class sellerLoginCredentials extends JFrame {
+        private JTextField emailField;
+        private JPasswordField passwordField;
+        private JButton loginButton;
+
+        public sellerLoginCredentials() {
+            super("Enter New Login Credentials");
+            emailField = new JTextField(20);
+            passwordField = new JPasswordField(20);
+
+            loginButton = new JButton("Enter");
+            JPanel panel = new JPanel();
+            panel.add(new JLabel("Email:"));
+            panel.add(emailField);
+            panel.add(new JLabel("Password:"));
+            panel.add(passwordField);
+            panel.add(loginButton);
+            add(panel);
+
+            loginButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    User user = null;
+                    try {
+                        char[] temp = passwordField.getPassword();
+                        User loginSuccess = processLogin(emailField.getText(), new String(temp));
+
+                        if (loginSuccess != null) {
+                            SellerGUI sellerGUI = new SellerGUI(loginSuccess);
+                            sellerGUI.setVisible(true);
+                            dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Incorrect Email or Password. Please try again!", "LoginError!", JOptionPane.ERROR_MESSAGE);
+                        }
+                        // maybe pass the User as an argument to the BuyerGUI class, so we can use it in marketplace
+
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+
+                private User processLogin(String email, String password) throws IOException {
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    bw.write("sendLogin\n");
+                    bw.write(email);
+                    bw.write("\n");
+                    bw.flush();
+                    bw.write(password);
+                    bw.write("\n");
+                    bw.flush();
+                    System.out.println(password);
+
+                    BufferedReader btemp = new BufferedReader(new InputStreamReader(dis));
+                    String loginConfirmation = btemp.readLine();
+                    if (loginConfirmation.equals("loginError")) {
+                        return null;
+                    } else {
+                        System.out.println(loginConfirmation);
+                        return new User(loginConfirmation.split(", "));
+                    }
+
+                }
+
+
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+        }
+    }
+
+
+    public static int readInt(String input) {
+        int result;
+        try {
+            result = Integer.parseInt(input);
+            return result;
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Please enter a valid Integer!",
+                    "ERROR!", JOptionPane.ERROR_MESSAGE);
+            return -1;
+        }
+    }
+
+
+    private static class SellerGUI extends JFrame {
+
+        private JButton addButton;
+        private JButton deleteButton;
+        private JButton editButton;
+        private JButton statisticsButton;
+        private JButton editAccountButton;
+        private JButton deleteAccountButton;
+        private JButton logoutButton;
+
+        private Seller createSeller(User user) {
+            Seller seller = new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                    user.getAge(), null);
+
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+            BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+            ArrayList<Seller> db = null;
+            try {
+                bw.write("sendSeller\n");
+                bw.flush();
+                db =  sellerServerRead(parseServer(bfr));
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            for (Seller k: db) {
+                if (k.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
+                    seller.setStores(k.getStores());
+                }
+            }
+            return seller;
+        }
+
+        public SellerGUI(User user) {
+            super("Seller Menu: What actions would you like to take?");
+
+            addButton = new JButton("Add Store");
+            deleteButton = new JButton("Delete Store");
+            editButton = new JButton("Edit Store");
+            statisticsButton = new JButton("View Statistics");
+            editAccountButton = new JButton("Edit Account");
+            deleteAccountButton = new JButton("Delete Account");
+            logoutButton = new JButton("Logout");
+
+            JPanel buttonPanel = new JPanel();
+            buttonPanel.add(addButton);
+            buttonPanel.add(deleteButton);
+            buttonPanel.add(editButton);
+            buttonPanel.add(statisticsButton);
+            buttonPanel.add(editAccountButton);
+            buttonPanel.add(deleteAccountButton);
+            buttonPanel.add(logoutButton);
+            add(buttonPanel);
+
+            addButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+
+                    // freezes when making a new account but not when logging
+                    ArrayList<Seller> database = requestSellerDatabase();
+                    Seller seller = createSeller(user);
+
+
+                    // generate new frame for adding a store:
+                    addStore addStore = new addStore(seller);
+                    addStore.setVisible(true);
+
+                }
+
+                private Seller coreProcess(ArrayList<Seller> database, User user) {
+                    ArrayList<Store> sellerStores = null;
+                    for (Seller seller : database) {
+                        if (seller.getUniqueIdentifier() == user.getUniqueIdentifier()) {
+                            sellerStores = seller.getStores();
+                            break;
+                        }
+                    }
+                    // constructing seller object from info from server:
+                    return new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                            user.getAge(), sellerStores);
+                }
+
+                private ArrayList<Seller> requestSellerDatabase() {
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+                    try {
+                        bw.write("sendSeller\n");
+                        bw.flush();
+                        return sellerServerRead(parseServer(bfr));
+
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+
+            deleteButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    // here for framework, but should read seller data from server here:
+
+                    ArrayList<Seller> database = requestSellerDatabase();
+
+                    Seller seller = createSeller(user);
+
+
+                    if (seller.getStores().size() == 0 || seller.getStores() == null) {
+                        JOptionPane.showMessageDialog(null, null,
+                                "You have no stores, please add one.", JOptionPane.INFORMATION_MESSAGE);
+
+                    } else {
+                        // new JFrame for deleting stores here:
+                        deleteStore deleteStore = new deleteStore(seller);
+                        deleteStore.setVisible(true);
 
                     }
 
+                }
+
+                private Seller coreProcess(ArrayList<Seller> database, User user) {
+                    ArrayList<Store> sellerStores = null;
+                    for (Seller seller : database) {
+                        if (seller.getUniqueIdentifier() == user.getUniqueIdentifier()) {
+                            sellerStores = seller.getStores();
+                            break;
+                        }
+                    }
+                    // constructing seller object from info from server:
+                    return new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                            user.getAge(), sellerStores);
+                }
                 private ArrayList<Seller> requestSellerDatabase() {
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
                     BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
                     try {
-                        dos.writeUTF("sendSeller\n");
+                        bw.write("sendSeller\n");
+                        bw.flush();
+                        return sellerServerRead(parseServer(bfr));
+
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+
+            editButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+
+                    ArrayList<Seller> database = requestSellerDatabase();
+
+
+                    Seller seller = createSeller(user);
+
+                    editStore editStore = new editStore(seller);
+                    editStore.setVisible(true);
+
+                }
+
+                private Seller coreProcess(ArrayList<Seller> database, User user) {
+                    ArrayList<Store> sellerStores = null;
+                    for (Seller seller : database) {
+                        if (seller.getUniqueIdentifier() == user.getUniqueIdentifier()) {
+                            sellerStores = seller.getStores();
+                            break;
+                        }
+                    }
+                    // constructing seller object from info from server:
+                    return new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                            user.getAge(), sellerStores);
+                }
+
+                private ArrayList<Seller> requestSellerDatabase() {
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+                    try {
+                        bw.write("sendSeller\n");
+                        bw.flush();
                         return sellerServerRead(parseServer(bfr));
 
                     } catch (IOException e) {
@@ -964,34 +1820,138 @@ public class Client extends JComponent implements Runnable {
                     }
                 }
 
-                private ArrayList<Buyer> requestBuyerDatabase() {
+            });
+
+            statisticsButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                }
+
+            });
+            editAccountButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+
+                }
+            });
+            deleteAccountButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // stores can be empty since the account is going to either be deleted or seller will be created in another method
+                    ArrayList <Store> stores = new ArrayList<>();
+
+                    Seller seller = new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
+                            user.getAge(), stores);
+
+                    int reply = JOptionPane.showConfirmDialog(null,
+                            "Are you sure you want to delete your account?", "Delete account",
+                            JOptionPane.YES_NO_OPTION);
+                    if (reply == JOptionPane.YES_OPTION) {
+                        Window window = SwingUtilities.windowForComponent(deleteAccountButton);
+                        window.dispose();
+                        // TODO server for seller delete account
+
+                    }
+
+                }
+            });
+            logoutButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // Handle the logout action
+                    // ...
+                }
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+
+        }
+    }
+
+    private static class addStore extends JFrame {
+        private JTextField storeName;
+        private JTextField storeProducts;
+        private JButton enterButton;
+        private JButton backToMenuButton;
+        private Seller seller;
+
+        public addStore(Seller seller) {
+
+            super("Add store");
+            storeName = new JTextField(20);
+            storeProducts = new JTextField(3);
+            enterButton = new JButton("Next step");
+            backToMenuButton = new JButton("Back to Seller Menu");
+            this.seller = seller;
+
+
+            JPanel panel = new JPanel();
+            panel.add(enterButton);
+            panel.add(new JLabel("What is the name of the store you want to add?"));
+            panel.add(storeName);
+            panel.add(new JLabel("How many products do you want to add?"));
+            panel.add(storeProducts);
+            add(panel);
+
+
+            enterButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    ArrayList<Product> products = null;
+
+                    int numProducts = Integer.parseInt(storeProducts.getText());
+                    String nameOfStore = storeName.getText();
+
+                    ArrayList<Seller> database = requestSellerDatabase();
+
+                    products = seller.addProducts(numProducts, database);
+
+
+                    Store store = new Store(nameOfStore, products);
+                    seller.addStore(-1, store);
+
+                    JOptionPane.showMessageDialog(null, "Store successfully added!",
+                            "Added New Store", JOptionPane.INFORMATION_MESSAGE);
+
+                    //update database after this:
+                    coreProcess(database, seller);
+
+                    // close the frame (takes you back to seller menu):
+                    dispose();
+                }
+
+                private ArrayList<Seller> requestSellerDatabase() {
                     BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
                     BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
                     try {
-                        bw.write("sendBuyer\n");
+                        bw.write("sendSeller\n");
                         bw.flush();
-                        return buyerServerRead(parseServer(bfr));
+                        return sellerServerRead(parseServer(bfr));
 
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
 
-                private void coreProcess(Buyer buyer, ArrayList<Buyer> buyerDatabase) {
-                    for (Buyer c : buyerDatabase) {
-                        if (c.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
-                            buyerDatabase.remove(c);
-                            buyerDatabase.add(buyer);
-                            break;
+                private void coreProcess(ArrayList<Seller> database, Seller seller) {
+                    for (Seller x : database) {
+                        if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
+                            database.remove(x);
+                            database.add(seller);
                         }
                     }
+
                     BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
                     BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
                     String toServer = "";
 
                     try {
-                        bw.write("writeBuyer\n");
-                        for (Buyer k : buyerDatabase) {
+                        bw.write("writeSeller\n");
+                        for (Seller k : database) {
                             toServer.concat(k.serverString());
                         }
                         bw.write(toServer);
@@ -1002,1082 +1962,185 @@ public class Client extends JComponent implements Runnable {
                         throw new RuntimeException(e);
                     }
                 }
-                });
+            });
 
-            previousPageButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed (ActionEvent e){
-
-                        marketPlace marketPlace = new marketPlace(buyer);
-                        marketPlace.setVisible(true);
-                        dispose();
+            backToMenuButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dispose();
 
 
-                    }
-                });
+                }
+            });
 
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-                pack();
-
-                setLocationRelativeTo(null);
-
-            }
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
         }
+    }
 
-        private static class continueShoppingEtc extends JFrame {
-            private JButton continueShoppingButton;
-            private JButton viewCartButton;
-            private JButton viewPurchasesButton;
-            private JButton logOutButton;
+    private static class deleteStore extends JFrame {
+        private JComboBox<String> comboBox;
+        private JButton deleteButton;
+        private JButton backToMenuButton;
+        private Seller seller;
 
+        public deleteStore(Seller seller) {
+            super("Delete A Store");
+            comboBox = new JComboBox<>();
+            this.seller = seller;
 
-            public continueShoppingEtc(Buyer buyer) {
-                super("Continue Shopping?");
+            for (Store store : seller.getStores()) {
+                comboBox.addItem(store.getStoreName());
+            }
 
-                continueShoppingButton = new JButton("Continue shopping: Marketplace menu");
-                viewCartButton = new JButton("View your cart");
-                viewPurchasesButton = new JButton("View your purchases");
-                logOutButton = new JButton("Log Out");
+            deleteButton = new JButton("Delete");
+            backToMenuButton = new JButton("Back to Seller Menu");
+            JPanel panel = new JPanel();
+            panel.add(comboBox);
+            panel.add(deleteButton);
+            panel.add(backToMenuButton);
+            add(panel);
 
-                JPanel panel = new JPanel();
-                panel.add(continueShoppingButton);
-                panel.add(viewCartButton);
-                panel.add(viewPurchasesButton);
-                panel.add(logOutButton);
-                add(panel);
+            deleteButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // assigns selectedItem to the item currently selected in the drop-down box (comboBox)
+                    String selectedItem = (String) comboBox.getSelectedItem();
 
-                continueShoppingButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        marketPlace marketPlace = new marketPlace(buyer);
-                        marketPlace.setVisible(true);
-                        dispose();
-                    }
-                });
-
-                viewCartButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        ArrayList<Buyer> db = requestBuyerDatabase();
-
-                        buyerCart buyerCart = new buyerCart(buyer, db);
-                        buyerCart.setVisible(true);
-
-                    }
-
-                    private ArrayList<Buyer> requestBuyerDatabase() {
-
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        try {
-                            bw.write("sendBuyer\n");
-                            bw.flush();
-                            return buyerServerRead(parseServer(bfr));
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+                    // deletes the selected item from the seller's stores and the drop-down box
+                    for (Store store : seller.getStores()) {
+                        if (selectedItem.equals(store.getStoreName())) {
+                            seller.getStores().remove(store);
+                            comboBox.removeItem(selectedItem);
                         }
                     }
-                });
 
-                viewPurchasesButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        String purchasesString = "";
-                        for (ProductPurchase productPurchase : buyer.getPurchases()) {
-                            purchasesString = purchasesString + productPurchase.getName() + " " + productPurchase.getPrice() + "\n";
-                        }
+                    // update database after this:
+                    ArrayList<Seller> database = requestSellerDatabase();
+                    coreProcess(database, seller);
 
-                        JOptionPane.showMessageDialog(null, purchasesString,
-                                "Your Purchases", JOptionPane.INFORMATION_MESSAGE);
+                    // close the frame (takes you back to seller menu):
+                    // maybe not necessary if the user wants to delete multiple stores before closing the frame
+                    dispose();
 
-                    }
-                });
 
-                logOutButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        // maybe some kind of method here that writes all changes to the database (may not be needed)
-                        JOptionPane.showMessageDialog(null, "Thank you, come again!",
-                                "Seeya!", JOptionPane.INFORMATION_MESSAGE);
-
-                        dispose();
-
-                    }
-
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-
-            }
-        }
-
-        private static class buyerCart extends JFrame {
-
-            private JButton removeItemButton;
-            private JButton purchaseCartButton;
-            private JButton previousPageButton;
-            private JComboBox<String> comboBox;
-
-            private ArrayList<Buyer> buyerDatabase;
-
-            public buyerCart(Buyer buyer, ArrayList<Buyer> buyerDatabase) {
-                super("Your Shopping Cart");
-                removeItemButton = new JButton("Remove item");
-                purchaseCartButton = new JButton("Purchase cart");
-                previousPageButton = new JButton("Previous page");
-                comboBox = new JComboBox<>();
-                this.buyerDatabase = buyerDatabase;
-
-                for (ProductPurchase product : buyer.getShoppingCart()) {
-                    comboBox.addItem(product.toString());
                 }
 
-                JPanel panel = new JPanel();
-                panel.add(removeItemButton);
-                panel.add(purchaseCartButton);
-                panel.add(previousPageButton);
-                panel.add(comboBox);
-                add(panel);
-
-                removeItemButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        String selectedItem = (String) comboBox.getSelectedItem();
-
-                        for (ProductPurchase product : buyer.getShoppingCart()) {
-                            if (selectedItem.equals(product.toString())) {
-                                buyer.removeFromShoppingCart(product);
-                                comboBox.removeItem(selectedItem);
-                            }
-                        }
-
-                        coreProcess(buyer, buyerDatabase);
-
-
-                    }
-
-                    private void coreProcess(Buyer buyer, ArrayList<Buyer> buyerDatabase) {
-                        for (Buyer c : buyerDatabase) {
-                            if (c.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
-                                buyerDatabase.remove(c);
-                                buyerDatabase.add(buyer);
-                                break;
-                            }
-                        }
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        String toServer = "";
-
-                        try {
-                            bw.write("writeBuyer\n");
-                            for (Buyer k : buyerDatabase) {
-                                toServer.concat(k.serverString());
-                            }
-                            bw.write(toServer);
-                            bw.write("\n");
-                            bw.flush();
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-
-                    }
-                });
-
-                purchaseCartButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        // read database in to here:
-                        ArrayList<Seller> database = requestSellerDatabase();
-                        int result = 0;
-                        do {
-                            result = buyer.purchaseCart(database);
-                        } while (result == 1);
-
-                        comboBox.removeAll();
-                        dispose();
-
-                        coreProcess(buyer,buyerDatabase);
-
-
-                    }
-
-                    private void coreProcess(Buyer buyer, ArrayList<Buyer> buyerDatabase) {
-                        for (Buyer c : buyerDatabase) {
-                            if (c.getUniqueIdentifier() == buyer.getUniqueIdentifier()) {
-                                buyerDatabase.remove(c);
-                                buyerDatabase.add(buyer);
-                                break;
-                            }
-                        }
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        String toServer = "";
-
-                        try {
-                            bw.write("writeBuyer\n");
-                            for (Buyer k : buyerDatabase) {
-                                toServer.concat(k.serverString());
-                            }
-                            bw.write(toServer);
-                            bw.write("\n");
-                            bw.flush();
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-
-                    }
-
-                    private ArrayList<Seller> requestSellerDatabase() {
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        try {
-                            dos.writeUTF("sendSeller\n");
-                            return sellerServerRead(parseServer(bfr));
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                });
-
-                previousPageButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        dispose();
-
-                    }
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-            }
-        }
-
-        private static class LoginOptionSeller extends JFrame {
-            private JButton createAccountButton;
-            private JButton loginButton;
-
-            public LoginOptionSeller() {
-                super("Login or Create Account");
-                createAccountButton = new JButton("Create Account");
-                loginButton = new JButton("Login");
-
-                JPanel panel = new JPanel();
-                panel.add(createAccountButton);
-                panel.add(loginButton);
-                add(panel);
-
-                createAccountButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        SellerCreateAccountCredentials loginCredentials = new SellerCreateAccountCredentials();
-                        loginCredentials.setVisible(true);
-                        dispose();
-
-                    }
-                });
-
-                loginButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        sellerLoginCredentials loginCredentials = new sellerLoginCredentials();
-                        loginCredentials.setVisible(true);
-                        dispose();
-
-                    }
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-            }
-        }
-
-        private static class BuyerCreateAccountCredentials extends JFrame {
-            private Client client;
-            private JTextField emailField;
-            private JPasswordField passwordField;
-            private JTextField nameField;
-            private JTextField ageField;
-            private JButton loginButton;
-            private User user;
-
-            public BuyerCreateAccountCredentials() {
-                super("Enter New Login Credentials");
-                this.client = client;
-                emailField = new JTextField(20);
-                passwordField = new JPasswordField(20);
-                nameField = new JTextField(20);
-                ageField = new JTextField(3);
-                loginButton = new JButton("Enter");
-                JPanel panel = new JPanel();
-                panel.add(new JLabel("Email:"));
-                panel.add(emailField);
-                panel.add(new JLabel("Password:"));
-                panel.add(passwordField);
-                panel.add(new JLabel("Name:"));
-                panel.add(nameField);
-                panel.add(new JLabel("Age:"));
-                panel.add(ageField);
-                panel.add(loginButton);
-                add(panel);
-
-                loginButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        User loginSuccess = null;
-                        try {
-                            char[] temp = passwordField.getPassword();
-                            loginSuccess = processLogin(emailField.getText(), new String(temp), nameField.getText(), Integer.parseInt(ageField.getText()));
-                            System.out.println("reached");
-                            BuyerGUI buyerGUI = new BuyerGUI(loginSuccess);
-                            buyerGUI.setVisible(true);
-                            dispose();
-
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
-
-                    }
-
-                    private User processLogin(String email, String password, String name, int age) throws IOException {
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
-                        BufferedReader btemp = new BufferedReader(new InputStreamReader(dis));
-                        bw.write("getUniqueInt\n");
+                private ArrayList<Seller> requestSellerDatabase() {
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+                    try {
+                        bw.write("sendSeller\n");
                         bw.flush();
-                        int uniqueID = Integer.parseInt(btemp.readLine());
-                        System.out.println(uniqueID);
-                        User user = new User(uniqueID, email, password, name, age);
-                        bw.write("confirmUser\n");
-                        bw.write(user.constructorString());
-                        bw.write("\n");
-                        bw.flush();
-                        return user;
+                        return sellerServerRead(parseServer(bfr));
+
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-            }
-        }
-
-        private static class BuyerLoginCredentials extends JFrame {
-            private Client client;
-            private JTextField emailField;
-            private JPasswordField passwordField;
-            private JButton loginButton;
-
-            public BuyerLoginCredentials() {
-                super("Enter New Login Credentials");
-                this.client = client;
-                emailField = new JTextField(20);
-                passwordField = new JPasswordField(20);
-
-                loginButton = new JButton("Enter");
-                JPanel panel = new JPanel();
-                panel.add(new JLabel("Email:"));
-                panel.add(emailField);
-                panel.add(new JLabel("Password:"));
-                panel.add(passwordField);
-                panel.add(loginButton);
-                add(panel);
-
-                loginButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        try {
-                            char[] temp = passwordField.getPassword();
-                            User loginSuccess = processLogin(emailField.getText(), new String(temp));
-
-
-                            if (loginSuccess != null) {
-                                BuyerGUI buyerGUI = new BuyerGUI(loginSuccess);
-                                buyerGUI.setVisible(true);
-                                dispose();
-                            } else {
-                                JOptionPane.showMessageDialog(null, "Incorrect Email or Password. Please try again!", "LoginError!", JOptionPane.ERROR_MESSAGE);
-                            }
-
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-
-                    private User processLogin(String email, String password) throws IOException {
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
-                        bw.write("sendLogin\n");
-                        bw.write(email);
-                        bw.write("\n");
-                        bw.flush();
-                        bw.write(password);
-                        bw.write("\n");
-                        bw.flush();
-                        System.out.println(password);
-
-                        BufferedReader btemp = new BufferedReader(new InputStreamReader(dis));
-                        String loginConfirmation = btemp.readLine();
-                        if (loginConfirmation.equals("loginError")) {
-                            return null;
-                        } else {
-                            System.out.println(loginConfirmation);
-                            return new User(loginConfirmation.split(", "));
-                        }
-
-                    }
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-            }
-        }
-
-
-        private static class SellerCreateAccountCredentials extends JFrame {
-            private JTextField emailField;
-            private JPasswordField passwordField;
-            private JTextField nameField;
-            private JTextField ageField;
-            private JButton loginButton;
-            private User user;
-
-            public SellerCreateAccountCredentials() {
-                super("Enter New Login Credentials");
-                emailField = new JTextField(20);
-                passwordField = new JPasswordField(20);
-                nameField = new JTextField(20);
-                ageField = new JTextField(3);
-                loginButton = new JButton("Enter");
-                JPanel panel = new JPanel();
-                panel.add(new JLabel("Email:"));
-                panel.add(emailField);
-                panel.add(new JLabel("Password:"));
-                panel.add(passwordField);
-                panel.add(new JLabel("Name:"));
-                panel.add(nameField);
-                panel.add(new JLabel("Age:"));
-                panel.add(ageField);
-                panel.add(loginButton);
-                add(panel);
-
-                loginButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        User loginSuccess = null;
-                        try {
-                            char[] temp = passwordField.getPassword();
-                            loginSuccess = processLogin(emailField.getText(), new String(temp), nameField.getText(), Integer.parseInt(ageField.getText()));
-
-                            SellerGUI sellerGUI = new SellerGUI(loginSuccess);
-                            sellerGUI.setVisible(true);
-                            dispose();
-
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
-
-                    }
-
-                    private User processLogin(String email, String password, String name, int age) throws IOException {
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
-                        BufferedReader btemp = new BufferedReader(new InputStreamReader(dis));
-                        bw.write("getUniqueInt\n");
-                        int uniqueID = Integer.parseInt(btemp.readLine());
-                        User user = new User(uniqueID, password, email, name, age);
-                        bw.write("confirmUser");
-                        bw.write(user.constructorString());
-                        bw.write("\n");
-                        bw.flush();
-
-
-                        String loginConfirmation = btemp.readLine();
-                        if (loginConfirmation.equals("loginError")) {
-                            return null;
-                        } else {
-                            System.out.println(loginConfirmation);
-                            return new User(loginConfirmation.split(", "));
-                        }
-
-                    }
-
-
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-            }
-        }
-
-        private static class sellerLoginCredentials extends JFrame {
-            private Client client;
-            private JTextField emailField;
-            private JPasswordField passwordField;
-            private JButton loginButton;
-
-            public sellerLoginCredentials() {
-                super("Enter New Login Credentials");
-                emailField = new JTextField(20);
-                passwordField = new JPasswordField(20);
-
-                loginButton = new JButton("Enter");
-                JPanel panel = new JPanel();
-                panel.add(new JLabel("Email:"));
-                panel.add(emailField);
-                panel.add(new JLabel("Password:"));
-                panel.add(passwordField);
-                panel.add(loginButton);
-                add(panel);
-
-                loginButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        User user = null;
-                        try {
-                            char[] temp = passwordField.getPassword();
-                            User loginSuccess = processLogin(emailField.getText(), new String(temp));
-
-                            if (loginSuccess != null) {
-                                SellerGUI sellerGUI = new SellerGUI(user);
-                                sellerGUI.setVisible(true);
-                                dispose();
-                            } else {
-                                JOptionPane.showMessageDialog(null, "Incorrect Email or Password. Please try again!", "LoginError!", JOptionPane.ERROR_MESSAGE);
-                            }
-                            // maybe pass the User as an argument to the BuyerGUI class, so we can use it in marketplace
-
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-
-                    private User processLogin(String email, String password) throws IOException {
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
-                        bw.write("sendLogin\n");
-                        bw.write(email);
-                        bw.write("\n");
-                        bw.flush();
-                        bw.write(password);
-                        bw.write("\n");
-                        bw.flush();
-                        System.out.println(password);
-
-                        BufferedReader btemp = new BufferedReader(new InputStreamReader(dis));
-                        String loginConfirmation = btemp.readLine();
-                        if (loginConfirmation.equals("loginError")) {
-                            return null;
-                        } else {
-                            System.out.println(loginConfirmation);
-                            return new User(loginConfirmation.split(", "));
-                        }
-
-                    }
-
-
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-            }
-        }
-
-
-        public static int readInt(String input) {
-            int result;
-            try {
-                result = Integer.parseInt(input);
-                return result;
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "Please enter a valid Integer!",
-                        "ERROR!", JOptionPane.ERROR_MESSAGE);
-                return -1;
-            }
-        }
-
-
-        private static class SellerGUI extends JFrame {
-
-            private JButton addButton;
-            private JButton deleteButton;
-            private JButton editButton;
-            private JButton statisticsButton;
-            private JButton editAccountButton;
-            private JButton deleteAccountButton;
-            private JButton logoutButton;
-            private Seller sellerX;
-
-            public SellerGUI(User user) {
-                super("Seller Menu: What actions would you like to take?");
-
-                addButton = new JButton("Add Store");
-                deleteButton = new JButton("Delete Store");
-                editButton = new JButton("Edit Store");
-                statisticsButton = new JButton("View Statistics");
-                editAccountButton = new JButton("Edit Account");
-                deleteAccountButton = new JButton("Delete Account");
-                logoutButton = new JButton("Logout");
-
-                JPanel buttonPanel = new JPanel();
-                buttonPanel.add(addButton);
-                buttonPanel.add(deleteButton);
-                buttonPanel.add(editButton);
-                buttonPanel.add(statisticsButton);
-                buttonPanel.add(editAccountButton);
-                buttonPanel.add(deleteAccountButton);
-                buttonPanel.add(logoutButton);
-                add(buttonPanel);
-
-                addButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        // here for framework, but should read seller data from server here:
-
-                        ArrayList<Seller> database = requestSellerDatabase();
-
-                        sellerX = coreProcess(database, user);
-
-                        // generate new frame for adding a store:
-                        addStore addStore = new addStore(sellerX);
-                        addStore.setVisible(true);
-
-                    }
-
-                    private Seller coreProcess(ArrayList<Seller> database, User user) {
-                        ArrayList<Store> sellerStores = null;
-                        for (Seller seller : database) {
-                            if (seller.getUniqueIdentifier() == user.getUniqueIdentifier()) {
-                                sellerStores = seller.getStores();
-                                break;
-                            }
-                        }
-                        // constructing seller object from info from server:
-                        return new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
-                                user.getAge(), sellerStores);
-                    }
-
-                    private ArrayList<Seller> requestSellerDatabase() {
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        try {
-                            dos.writeUTF("sendSeller\n");
-                            return sellerServerRead(parseServer(bfr));
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                });
-
-                deleteButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        // here for framework, but should read seller data from server here:
-
-                        ArrayList<Seller> database = requestSellerDatabase();
-
-                        sellerX = coreProcess(database, user);
-
-                        if (sellerX.getStores().size() == 0) {
-                            JOptionPane.showMessageDialog(null, null,
-                                    "You have no stores, please add one.", JOptionPane.INFORMATION_MESSAGE);
-
-                        } else {
-                            // new JFrame for deleting stores here:
-                            deleteStore deleteStore = new deleteStore(sellerX);
-                            deleteStore.setVisible(true);
-
-                        }
-
-                    }
-
-                    private Seller coreProcess(ArrayList<Seller> database, User user) {
-                        ArrayList<Store> sellerStores = null;
-                        for (Seller seller : database) {
-                            if (seller.getUniqueIdentifier() == user.getUniqueIdentifier()) {
-                                sellerStores = seller.getStores();
-                                break;
-                            }
-                        }
-                        // constructing seller object from info from server:
-                        return new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
-                                user.getAge(), sellerStores);
-                    }
-                    private ArrayList<Seller> requestSellerDatabase() {
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        try {
-                            dos.writeUTF("sendSeller\n");
-                            return sellerServerRead(parseServer(bfr));
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                });
-
-                editButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        ArrayList<Seller> database = requestSellerDatabase();
-
-                        sellerX = coreProcess(database, user);
-
-                        editStore editStore = new editStore(sellerX);
-                        editStore.setVisible(true);
-
-                    }
-
-                    private Seller coreProcess(ArrayList<Seller> database, User user) {
-                        ArrayList<Store> sellerStores = null;
-                        for (Seller seller : database) {
-                            if (seller.getUniqueIdentifier() == user.getUniqueIdentifier()) {
-                                sellerStores = seller.getStores();
-                                break;
-                            }
-                        }
-                        // constructing seller object from info from server:
-                        return new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
-                                user.getAge(), sellerStores);
-                    }
-
-                    private ArrayList<Seller> requestSellerDatabase() {
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        try {
-                            dos.writeUTF("sendSeller\n");
-                            return sellerServerRead(parseServer(bfr));
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-
-                });
-
-                statisticsButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                    }
-
-                });
-                editAccountButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-
-                    }
-                });
-                deleteAccountButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        // stores can be empty since the account is going to either be deleted or seller will be created in another method
-                       ArrayList <Store> stores = new ArrayList<>();
-
-                        Seller seller = new Seller(user.getUniqueIdentifier(), user.getEmail(), user.getPassword(), user.getName(),
-                                user.getAge(), stores);
-
-                        int reply = JOptionPane.showConfirmDialog(null,
-                                "Are you sure you want to delete your account?", "Delete account",
-                                JOptionPane.YES_NO_OPTION);
-                        if (reply == JOptionPane.YES_OPTION) {
-                            Window window = SwingUtilities.windowForComponent(deleteAccountButton);
-                            window.dispose();
-                            // TODO server for seller delete account
-
-                        }
-
-                    }
-                });
-                logoutButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        // Handle the logout action
-                        // ...
-                    }
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-
-            }
-        }
-
-        private static class addStore extends JFrame {
-            private Client client;
-            private JTextField storeName;
-            private JTextField storeProducts;
-            private JButton enterButton;
-            private JButton backToMenuButton;
-            private Seller seller;
-
-            public addStore(Seller seller) {
-
-                super("Add store");
-                storeName = new JTextField(20);
-                storeProducts = new JTextField(3);
-                enterButton = new JButton("Next step");
-                backToMenuButton = new JButton("Back to Seller Menu");
-                this.seller = seller;
-                this.client = client;
-
-
-                JPanel panel = new JPanel();
-                panel.add(enterButton);
-                panel.add(new JLabel("What is the name of the store you want to add?"));
-                panel.add(storeName);
-                panel.add(new JLabel("How many products do you want to add?"));
-                panel.add(storeProducts);
-                add(panel);
-
-
-                enterButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        ArrayList<Product> products = null;
-
-                        int numProducts = Integer.parseInt(storeProducts.getText());
-                        String nameOfStore = storeName.getText();
-
-                        ArrayList<Seller> database = requestSellerDatabase();
-                        products = seller.addProducts(numProducts, database);
-
-                        Store store = new Store(nameOfStore, products);
-                        seller.addStore(-1, store);
-
-                        JOptionPane.showMessageDialog(null, "Store successfully added!",
-                                "Added New Store", JOptionPane.INFORMATION_MESSAGE);
-
-                        //update database after this:
-                        coreProcess(database, seller);
-
-                        // close the frame (takes you back to seller menu):
-                        dispose();
-                    }
-
-                    private ArrayList<Seller> requestSellerDatabase() {
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        try {
-                            dos.writeUTF("sendSeller\n");
-                            return sellerServerRead(parseServer(bfr));
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-
-                    private void coreProcess(ArrayList<Seller> database, Seller seller) {
-                        for (Seller x : database) {
-                            if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
-                                database.remove(x);
-                                database.add(seller);
-                            }
-                        }
-
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        String toServer = "";
-
-                        try {
-                            bw.write("writeSeller\n");
-                            for (Seller k : database) {
-                                toServer.concat(k.serverString());
-                            }
-                            bw.write(toServer);
-                            bw.write("\n");
-                            bw.flush();
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                });
-
-                backToMenuButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        dispose();
-
-
-                    }
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-            }
-        }
-
-        private static class deleteStore extends JFrame {
-            private JComboBox<String> comboBox;
-            private JButton deleteButton;
-            private JButton backToMenuButton;
-            private Seller seller;
-
-            public deleteStore(Seller seller) {
-                super("Delete A Store");
-                comboBox = new JComboBox<>();
-                this.seller = seller;
-
-                for (Store store : seller.getStores()) {
-                    comboBox.addItem(store.getStoreName());
                 }
 
-                deleteButton = new JButton("Delete");
-                backToMenuButton = new JButton("Back to Seller Menu");
-                JPanel panel = new JPanel();
-                panel.add(comboBox);
-                panel.add(deleteButton);
-                panel.add(backToMenuButton);
-                add(panel);
-
-                deleteButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        // assigns selectedItem to the item currently selected in the drop-down box (comboBox)
-                        String selectedItem = (String) comboBox.getSelectedItem();
-
-                        // deletes the selected item from the seller's stores and the drop-down box
-                        for (Store store : seller.getStores()) {
-                            if (selectedItem.equals(store.getStoreName())) {
-                                seller.getStores().remove(store);
-                                comboBox.removeItem(selectedItem);
-                            }
-                        }
-
-                        // update database after this:
-                        ArrayList<Seller> database = requestSellerDatabase();
-                        coreProcess(database, seller);
-
-                        // close the frame (takes you back to seller menu):
-                        // maybe not necessary if the user wants to delete multiple stores before closing the frame
-                        dispose();
-
-
-                    }
-
-                    private ArrayList<Seller> requestSellerDatabase() {
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        try {
-                            dos.writeUTF("sendSeller\n");
-                            return sellerServerRead(parseServer(bfr));
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+                private void coreProcess(ArrayList<Seller> database, Seller seller) {
+                    for (Seller x : database) {
+                        if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
+                            database.remove(x);
+                            database.add(seller);
                         }
                     }
 
-                    private void coreProcess(ArrayList<Seller> database, Seller seller) {
-                        for (Seller x : database) {
-                            if (x.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
-                                database.remove(x);
-                                database.add(seller);
-                            }
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
+                    BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
+                    String toServer = "";
+
+                    try {
+                        bw.write("writeSeller\n");
+                        for (Seller k : database) {
+                            toServer.concat(k.serverString());
                         }
+                        bw.write(toServer);
+                        bw.write("\n");
+                        bw.flush();
 
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(dos));
-                        BufferedReader bfr = new BufferedReader(new InputStreamReader(dis));
-                        String toServer = "";
-
-                        try {
-                            bw.write("writeSeller\n");
-                            for (Seller k : database) {
-                                toServer.concat(k.serverString());
-                            }
-                            bw.write(toServer);
-                            bw.write("\n");
-                            bw.flush();
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
-
-                });
-
-                backToMenuButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        dispose();
-
-
-                    }
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-
-            }
-
-        }
-
-
-        private static class editStore extends JFrame {
-          private JComboBox<String> comboBox;
-          private JButton selectStoreButton;
-          private JButton backToMenuButton;
-          private Seller seller;
-
-            public editStore(Seller seller) {
-                super("Edit A Store");
-                comboBox = new JComboBox<>();
-                this.seller = seller;
-
-                for (Store store : seller.getStores()) {
-                    comboBox.addItem(store.getStoreName());
                 }
-                selectStoreButton = new JButton("Select store");
-                backToMenuButton = new JButton("Back to menu");
 
-                JPanel panel = new JPanel();
-                panel.add(comboBox);
-                panel.add(selectStoreButton);
-                panel.add(backToMenuButton);
-                add(panel);
+            });
 
-                selectStoreButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        // assigns selectedItem to the item currently selected in the drop-down box (comboBox)
-                        String selectedItem = (String) comboBox.getSelectedItem();
+            backToMenuButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dispose();
 
-                        // deletes the selected item from the seller's stores and the drop-down box
-                        Store storeForEdit = null;
-                        for (Store store : seller.getStores()) {
-                            if (selectedItem.equals(store.getStoreName())) {
-                                storeForEdit = store;
-                            }
-                        }
 
-                        // new JFrame to edit the products in the selected store (pass the store and the seller):
-                        editStoreProducts editStoreProducts = new editStoreProducts(storeForEdit, seller);
-                        editStoreProducts.setVisible(true);
+                }
+            });
 
-                        // close the frame:
-                        dispose();
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
 
-                    }
-
-                });
-
-                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                pack();
-                setLocationRelativeTo(null);
-            }
         }
 
-        private static class editStoreProducts extends JFrame {
+    }
+
+
+    private static class editStore extends JFrame {
+        private JComboBox<String> comboBox;
+        private JButton selectStoreButton;
+        private JButton backToMenuButton;
+        private Seller seller;
+
+        public editStore(Seller seller) {
+            super("Edit A Store");
+            comboBox = new JComboBox<>();
+            this.seller = seller;
+
+            for (Store store : seller.getStores()) {
+                comboBox.addItem(store.getStoreName());
+            }
+            selectStoreButton = new JButton("Select store");
+            backToMenuButton = new JButton("Back to menu");
+
+            JPanel panel = new JPanel();
+            panel.add(comboBox);
+            panel.add(selectStoreButton);
+            panel.add(backToMenuButton);
+            add(panel);
+
+            selectStoreButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // assigns selectedItem to the item currently selected in the drop-down box (comboBox)
+                    String selectedItem = (String) comboBox.getSelectedItem();
+
+                    // deletes the selected item from the seller's stores and the drop-down box
+                    Store storeForEdit = null;
+                    for (Store store : seller.getStores()) {
+                        if (selectedItem.equals(store.getStoreName())) {
+                            storeForEdit = store;
+                        }
+                    }
+
+                    // new JFrame to edit the products in the selected store (pass the store and the seller):
+                    editStoreProducts editStoreProducts = new editStoreProducts(storeForEdit, seller);
+                    editStoreProducts.setVisible(true);
+
+                    // close the frame:
+                    dispose();
+
+                }
+
+            });
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            pack();
+            setLocationRelativeTo(null);
+        }
+    }
+
+    private static class editStoreProducts extends JFrame {
         private JComboBox<String> comboBox;
         private JButton changeProductNameButton;
         private JTextField newProductName;
@@ -2236,11 +2299,11 @@ public class Client extends JComponent implements Runnable {
                     String priceString = JOptionPane.showInputDialog(null, "How much does this item cost?");
                     double price = Double.parseDouble(priceString);
 
-                    int uniqueID = getProductDatabase(database).size() + 1;
+//                    int uniqueID = getProductDatabase(database).size() + 1;
 
-                    Product product = new Product(name, description, stock, price, 0, uniqueID);
-                    store.getProducts().add(product);
-                    comboBox.addItem(product.productPage());
+//                    Product product = new Product(name, description, stock, price, 0, uniqueID);
+//                    store.getProducts().add(product);
+//                    comboBox.addItem(product.productPage());
 
                 }
 
