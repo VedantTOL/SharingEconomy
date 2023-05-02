@@ -204,6 +204,10 @@ public class Product {
         return String.format("Name: %s\nPrice: $%.2f\nDescription: %s\nQuantity Available: %d\nQuantity Sold: %d", name, price, description, quantityForPurchase, quantitySold);
 
     }
+
+    public void addPurchase(int orderQ) {
+        this.setQuantitySold(this.getQuantitySold() + orderQ);
+    }
 /*
     Comparator<Product> compareByPrice = (Product o1, Product o2) ->
             o1.getPrice().compareTo( o2.getPrice() );

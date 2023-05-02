@@ -1660,6 +1660,7 @@ public class Client extends JComponent implements Runnable {
             for (Seller k: db) {
                 if (k.getUniqueIdentifier() == seller.getUniqueIdentifier()) {
                     seller.setStores(k.getStores());
+                    System.out.println(k.serverString());
                 }
             }
             return seller;

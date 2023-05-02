@@ -824,8 +824,6 @@ public class Buyer extends User {
 
         return null;
     }
-
-
     public static int readInt(String input) {
         int result;
         try {
@@ -850,10 +848,14 @@ public class Buyer extends User {
         for (ProductPurchase product: this.getShoppingCart()){
             shopping = shopping.concat(String.format("%d:%d, ", product.getUniqueID(), product.getOrderQuantity()));
         }
-        shopping = shopping.substring(0, shopping.length() - 2);
-        id = id.concat(shopping);
-        id = id.concat("\n");
-        id = id.concat(purchased);
+        try {
+            shopping = shopping.substring(0, shopping.length() - 2);
+            id = id.concat(shopping);
+            id = id.concat("\n");
+            id = id.concat(purchased);
+        } catch (StringIndexOutOfBoundsException e) {
+            // do nothing
+        }
         return id;
     }
 

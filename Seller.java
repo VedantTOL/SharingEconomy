@@ -126,6 +126,7 @@ public class Seller extends User {
         } catch (IndexOutOfBoundsException e) {
             this.stores.add(store);
         }
+        this.setStores(stores);
 
 
     }
