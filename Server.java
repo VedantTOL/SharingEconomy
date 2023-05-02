@@ -4,13 +4,11 @@ import java.io.DataOutputStream;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.SQLOutput;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.zip.DataFormatException;
 
-
 public class Server {
-
 
 
     public static void main(String[] args) throws IOException {
@@ -23,17 +21,16 @@ public class Server {
 
             try {
                 socket = serverSocket.accept();
-                System.out.println("Client connected");
+
 
                 DataInputStream dis = new DataInputStream(socket.getInputStream());
                 DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 
-                System.out.println("Now assigning a new thread to the client");
+
 
                 Thread t = new ClientHandler(dis, dos, socket);
 
                 t.start();
-                System.out.println("Thread created");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -79,7 +76,7 @@ class ClientHandler extends Thread {
             String data = "";
 
             boolean isSeller = Boolean.parseBoolean(bfr.readLine());
-            System.out.println(isSeller);
+
 
 
             while (true) {
@@ -106,11 +103,10 @@ class ClientHandler extends Thread {
                     //send login information
                     loginDatabase = getInformation(isSeller);
 
+
                     String email = bfr.readLine();
                     String password = bfr.readLine();
-                    System.out.println(email);
                     User user = null;
-
                     for (User parse : loginDatabase) {
                         if (parse.getEmail().equals(email)) {
                             user = parse;
@@ -126,7 +122,7 @@ class ClientHandler extends Thread {
                             bw.write("\n");
                             bw.flush();
                         } else {
-                            bw.write("loginError\n");
+                            bw.write("loginError");
                         }
                     }
                     bw.flush();
@@ -137,11 +133,12 @@ class ClientHandler extends Thread {
                     if (newWrite) {
                         buyerDatabase = readBuyerDatabase();
                     }
-                    bw.write("buyerDatabase\n");
-                    bw.flush();
+
                     for (Buyer buyer : buyerDatabase) {
                         data = data.concat(buyer.serverString());
+                        data = data.concat("\n");
                     }
+
                     bw.write(data);
                     bw.write("end\n");
                     bw.flush();
@@ -182,14 +179,12 @@ class ClientHandler extends Thread {
                     updateLoginDatabase(userDB, isSeller);
                 } else if (action.equals("getUniqueInt")) {
                     ArrayList<User> userDB = getInformation(isSeller);
-
                     bw.write(String.valueOf(userDB.size()));
                     bw.write("\n");
                     bw.flush();
                 } else if (action.equals("confirmUser")) {
                     String nex = bfr.readLine();
-
-                    User newUser = new User(nex.split(", "));
+                    User newUser = new User(nex.split(","));
                     ArrayList<User> userDB = getInformation(isSeller);
                     userDB.add(newUser);
                     updateLoginDatabase(userDB, isSeller);
@@ -204,11 +199,13 @@ class ClientHandler extends Thread {
     public static ArrayList<String> parseServer(BufferedReader bfr) throws IOException {
         ArrayList<String> data = new ArrayList<String>();
         String line;
+
         do {
             line = bfr.readLine();
             if (line == "" || line == null || line.equals("end")) {
                 break;
             }
+
             data.add(line);
         } while (true);
         return data;
@@ -325,16 +322,16 @@ class ClientHandler extends Thread {
         return new User(data.split(", "));
     }
 
-    public static ArrayList<Product> getProductDatabase(ArrayList<Seller> database) {
-
+    public static ArrayList<Product> getProductDatabase(ArrayList<Seller> sellerDB) {
         ArrayList<Product> productDatabase = new ArrayList<Product>();
-        for (Seller seller: database) {
+        for (Seller seller: sellerDB) {
             for (Store store : seller.getStores()) {
                 for (Product product : store.getProducts()) {
                     productDatabase.add(product);
                 }
             }
         }
+        productDatabase.sort(Comparator.<Product>comparingInt(Product::getUniqueID));
         return productDatabase;
     }
 
@@ -465,7 +462,7 @@ class ClientHandler extends Thread {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
+        bfr.close();
         return database;
     }
 
@@ -510,9 +507,34 @@ class ClientHandler extends Thread {
     }
 
     public void setSellerDatabase(ArrayList<Seller> sellerDatabase) {
+        ArrayList<Buyer> purchaseQuantity = getBuyerDatabase();
+        ArrayList<Product> products = getProductDatabase(sellerDatabase);
+        Product toChange;
+
+
+        for (Buyer buyer: purchaseQuantity){
+            for (ProductPurchase px: buyer.getPurchases()) {
+                toChange = px;
+                toChange.addPurchase(px.getOrderQuantity());
+                products.set(px.getUniqueID() - 1, toChange);
+            }
+        }
+        int i;
+        for (Seller seller: sellerDatabase) {
+            for (i = 0; i < seller.getStores().size(); i++) {
+                ArrayList<Product> tempStore = seller.getStores().get(i).getProducts();
+                for (Product product: tempStore) {
+                    int m = tempStore.indexOf(product);
+                    sellerDatabase.get(seller.getUniqueIdentifier()).getStores().get(i).getProducts().set(m, products.get(product.getUniqueID() - 1));
+                }
+            }
+        }
+
+
         try {
             BufferedWriter toFile = new BufferedWriter(new FileWriter("./src/SellerDatabase.txt"));
             for (Seller seller : sellerDatabase) {
+                System.out.println(seller.serverString());
                 toFile.write(seller.serverString());
                 toFile.flush();
             }
@@ -532,6 +554,7 @@ class ClientHandler extends Thread {
             BufferedWriter toFile = new BufferedWriter(new FileWriter("./src/BuyerDatabase.txt"));
             for (Buyer buyer : buyerDatabase) {
                 toFile.write(buyer.serverString());
+                toFile.write("\n");
                 toFile.flush();
             }
             toFile.close();
